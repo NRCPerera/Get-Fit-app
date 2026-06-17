@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions, StatusBar, AppState } from 'react-native';
+import { useSelector, useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,12 +8,12 @@ import * as Notifications from 'expo-notifications';
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
 import Loading from '../../components/common/Loading';
-import { userAPI } from '../../api/user.api';
 import { membershipAPI } from '../../api/membership.api';
 import { scheduleAPI } from '../../api/schedule.api';
 import { paymentAPI } from '../../api/payment.api';
 import { getUnreadCount } from '../../api/message.api';
 import { workoutAPI } from '../../api/workout.api';
+import { fetchUserProfile } from '../../store/slices/userSlice';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
@@ -25,10 +26,14 @@ const { width } = Dimensions.get('window');
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const { theme: dynamicTheme, isDark } = useTheme();
   const colors = dynamicTheme.colors;
+  
+  // Get profile from Redux
+  const { profile } = useSelector((state) => state.user);
+  
   const [selectedCategory, setSelectedCategory] = useState('beginner');
-  const [profile, setProfile] = useState(null);
   const [activeMembership, setActiveMembership] = useState(null);
   const [schedules, setSchedules] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -39,10 +44,7 @@ const HomeScreen = () => {
   const [customWorkouts, setCustomWorkouts] = useState({ beginner: [], intermediate: [], advanced: [] });
   const appState = useRef(AppState.currentState);
 
-
-
   // Fetch unread message count
-
   const fetchUnreadMessages = useCallback(async () => {
     try {
       const response = await getUnreadCount();
@@ -58,15 +60,17 @@ const HomeScreen = () => {
     try {
       setError('');
       setLoading(true);
-      const [profileRes, membershipRes, scheduleRes, paymentRes, workoutsRes] = await Promise.all([
-        userAPI.getProfile().catch(() => null),
+      // Fetch profile from Redux, and other data from APIs
+      const [membershipRes, scheduleRes, paymentRes, workoutsRes] = await Promise.all([
         membershipAPI.getMyMemberships().catch(() => null),
         scheduleAPI.getMySchedules().catch(() => null),
         paymentAPI.getPaymentHistory().catch(() => null),
         workoutAPI.getPublicWorkouts().catch(() => null),
       ]);
 
-      setProfile(profileRes?.data?.user || profileRes?.data || null);
+      // Dispatch profile fetch to refresh from Redux
+      await dispatch(fetchUserProfile());
+
       setActiveMembership(membershipRes?.data?.activeMembership || null);
       setSchedules(scheduleRes?.data?.items || []);
       setPayments(paymentRes?.data?.items || []);
@@ -92,7 +96,7 @@ const HomeScreen = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [fetchUnreadMessages]);
+  }, [dispatch, fetchUnreadMessages]);
 
   useEffect(() => { loadData(); }, [loadData]);
   // Listen for push notifications to update unread count

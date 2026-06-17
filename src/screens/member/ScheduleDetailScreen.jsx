@@ -196,7 +196,7 @@ const ScheduleDetailScreen = () => {
                             </Text>
                           </View>
                           <View style={styles.exerciseDetails}>
-                            {exercise.setReps && exercise.setReps.length > 0 ? (
+                            {exercise.setReps && exercise.setReps.length > 0 && (
                               <View style={styles.setRepsContainer}>
                                 {exercise.setReps.map((setRep, srIndex) => (
                                   <View key={srIndex} style={[styles.setRepItem, { backgroundColor: colors.primary + '20' }]}>
@@ -206,22 +206,6 @@ const ScheduleDetailScreen = () => {
                                   </View>
                                 ))}
                               </View>
-                            ) : (
-                              // Legacy support for old format
-                              <>
-                                {exercise.sets && (
-                                  <View style={styles.exerciseDetailItem}>
-                                    <Text style={[styles.exerciseDetailLabel, { color: colors.textSecondary }]}>Sets:</Text>
-                                    <Text style={[styles.exerciseDetailValue, { color: colors.text }]}>{exercise.sets}</Text>
-                                  </View>
-                                )}
-                                {exercise.reps && (
-                                  <View style={styles.exerciseDetailItem}>
-                                    <Text style={[styles.exerciseDetailLabel, { color: colors.textSecondary }]}>Reps:</Text>
-                                    <Text style={[styles.exerciseDetailValue, { color: colors.text }]}>{exercise.reps}</Text>
-                                  </View>
-                                )}
-                              </>
                             )}
                             {exercise.duration && (
                               <View style={styles.exerciseDetailItem}>
@@ -257,7 +241,7 @@ const ScheduleDetailScreen = () => {
                       </Text>
                     </View>
                     <View style={styles.exerciseDetails}>
-                      {exercise.setReps && exercise.setReps.length > 0 ? (
+                      {exercise.setReps && exercise.setReps.length > 0 && (
                         <View style={styles.setRepsContainer}>
                           {exercise.setReps.map((setRep, srIndex) => (
                             <View key={srIndex} style={[styles.setRepItem, { backgroundColor: colors.primary + '20' }]}>
@@ -267,22 +251,6 @@ const ScheduleDetailScreen = () => {
                             </View>
                           ))}
                         </View>
-                      ) : (
-                        // Legacy support for old format
-                        <>
-                          {exercise.sets && (
-                            <View style={styles.exerciseDetailItem}>
-                              <Text style={[styles.exerciseDetailLabel, { color: colors.textSecondary }]}>Sets:</Text>
-                              <Text style={[styles.exerciseDetailValue, { color: colors.text }]}>{exercise.sets}</Text>
-                            </View>
-                          )}
-                          {exercise.reps && (
-                            <View style={styles.exerciseDetailItem}>
-                              <Text style={[styles.exerciseDetailLabel, { color: colors.textSecondary }]}>Reps:</Text>
-                              <Text style={[styles.exerciseDetailValue, { color: colors.text }]}>{exercise.reps}</Text>
-                            </View>
-                          )}
-                        </>
                       )}
                       {exercise.duration && (
                         <View style={styles.exerciseDetailItem}>
@@ -294,14 +262,6 @@ const ScheduleDetailScreen = () => {
                         <View style={styles.exerciseDetailItem}>
                           <Text style={[styles.exerciseDetailLabel, { color: colors.textSecondary }]}>Rest:</Text>
                           <Text style={[styles.exerciseDetailValue, { color: colors.text }]}>{exercise.restTime} sec</Text>
-                        </View>
-                      )}
-                      {exercise.dayOfWeek && (
-                        <View style={styles.exerciseDetailItem}>
-                          <Text style={[styles.exerciseDetailLabel, { color: colors.textSecondary }]}>Day:</Text>
-                          <Text style={[styles.exerciseDetailValue, { color: colors.text }]}>
-                            {exercise.dayOfWeek.charAt(0).toUpperCase() + exercise.dayOfWeek.slice(1)}
-                          </Text>
                         </View>
                       )}
                     </View>

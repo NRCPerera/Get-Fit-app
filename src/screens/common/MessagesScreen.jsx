@@ -20,6 +20,7 @@ import * as Notifications from 'expo-notifications';
 
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
+import { getFileUrl } from '../../utils/helpers';
 import { getConversations } from '../../api/message.api';
 import BackButton from '../../components/common/BackButton';
 
@@ -136,7 +137,9 @@ const MessagesScreen = ({ navigation }) => {
       conversationId: conversation._id,
       recipientId: conversation.otherParticipant._id,
       recipientName: conversation.otherParticipant.name,
-      recipientPicture: conversation.otherParticipant.profilePicture,
+      recipientPicture: conversation.otherParticipant.profilePicture
+        ? (getFileUrl(conversation.otherParticipant.profilePicture) || conversation.otherParticipant.profilePicture)
+        : null,
       recipientRole: conversation.otherParticipant.role,
     });
   };
@@ -176,7 +179,7 @@ const MessagesScreen = ({ navigation }) => {
         <View style={styles.avatarContainer}>
           {item.otherParticipant?.profilePicture ? (
             <Image
-              source={{ uri: item.otherParticipant.profilePicture }}
+              source={{ uri: getFileUrl(item.otherParticipant.profilePicture) || item.otherParticipant.profilePicture }}
               style={[styles.avatar, { backgroundColor: colors.backgroundSecondary }]}
             />
           ) : (

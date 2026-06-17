@@ -22,6 +22,7 @@ import * as Notifications from 'expo-notifications';
 
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
+import { getFileUrl } from '../../utils/helpers';
 import BackButton from '../../components/common/BackButton';
 import {
   getOrCreateConversation,
@@ -294,7 +295,7 @@ const ChatScreen = ({ navigation, route }) => {
             <View style={styles.senderAvatar}>
               {item.sender?.profilePicture ? (
                 <Image
-                  source={{ uri: item.sender.profilePicture }}
+                  source={{ uri: getFileUrl(item.sender.profilePicture) || item.sender.profilePicture }}
                   style={styles.avatarSmall}
                 />
               ) : (
@@ -379,7 +380,7 @@ const ChatScreen = ({ navigation, route }) => {
         <TouchableOpacity style={styles.headerInfo} activeOpacity={0.8}>
           {recipient.profilePicture ? (
             <Image
-              source={{ uri: recipient.profilePicture }}
+              source={{ uri: getFileUrl(recipient.profilePicture) || recipient.profilePicture }}
               style={styles.headerAvatar}
             />
           ) : (

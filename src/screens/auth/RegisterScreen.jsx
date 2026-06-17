@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { Alert, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { CommonActions } from '@react-navigation/native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
@@ -13,7 +13,7 @@ import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import KeyboardAvoidingWrapper from '../../components/common/KeyboardAvoidingWrapper';
 import DateSelectInput from '../../components/common/DateSelectInput';
-import { registerUser } from '../../store/slices/authSlice';
+import { clearError, registerUser } from '../../store/slices/authSlice';
 import { validateEmail } from '../../utils/validation';
 import { screenStyles, headerStyles } from '../../styles/shared';
 
@@ -21,8 +21,14 @@ const RegisterScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const { loading, error } = useSelector((state) => state.auth);
-  const { theme: dynamicTheme, isDark } = useTheme();
+  const { theme: dynamicTheme } = useTheme();
   const colors = dynamicTheme.colors;
+
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(clearError());
+    }, [dispatch])
+  );
 
   const ValidationSchema = useMemo(() => Yup.object().shape({
     name: Yup.string().min(2, 'Name too short').max(50, 'Name too long').required('Name is required'),
@@ -36,8 +42,11 @@ const RegisterScreen = () => {
 
   const initialValues = { name: '', email: '', phone: '', dateOfBirth: '', password: '', confirmPassword: '', gender: '' };
 
-  const handleSubmit = async (values, { setSubmitting, setStatus }) => {
+  const handleSubmit = async (values, { setSubmitting, setStatus, setFieldError }) => {
     try {
+      dispatch(clearError());
+      setStatus(undefined);
+      setFieldError('email', undefined);
       const payload = {
         name: values.name,
         email: values.email,
@@ -46,39 +55,52 @@ const RegisterScreen = () => {
         password: values.password,
         gender: values.gender || undefined
       };
-      const action = await dispatch(registerUser(payload));
-      if (registerUser.fulfilled.match(action)) {
-        if (action.payload?.requiresOTPVerification) {
-          navigation.dispatch(
-            CommonActions.reset({
-              index: 0,
-              routes: [
-                {
-                  name: 'VerifyEmail',
-                  params: { email: values.email },
-                },
-              ],
-            })
-          );
-        } else {
-          setStatus({ success: 'Registration successful. Please log in.' });
-          navigation.dispatch(
-            CommonActions.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            })
-          );
-        }
-      } else {
-        const errorMsg = typeof action.payload === 'string'
-          ? action.payload
-          : action.payload?.message || 'Registration failed';
-        setStatus({ error: errorMsg });
+      const result = await dispatch(registerUser(payload)).unwrap();
+
+      if (result?.requiresOTPVerification && result?.email) {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [
+              {
+                name: 'VerifyEmail',
+                params: { email: result.email },
+              },
+            ],
+          })
+        );
+        return;
       }
+
+      if (result?.user && !result?.requiresOTPVerification) {
+        setStatus({ success: 'Registration successful. Please log in.' });
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          })
+        );
+        return;
+      }
+
+      setStatus({
+        error: 'Registration did not complete. Please try again.',
+      });
+    } catch (error) {
+      const errorMessage = error?.message || error || 'Registration failed';
+      if (typeof errorMessage === 'string' && errorMessage.toLowerCase().includes('email')) {
+        setFieldError('email', errorMessage);
+      }
+      Alert.alert('Registration Failed', errorMessage);
+      setStatus({
+        error: errorMessage,
+      });
     } finally {
       setSubmitting(false);
     }
   };
+
+  const combinedErrorMessage = error?.message || '';
 
   return (
     <KeyboardAvoidingWrapper
@@ -101,13 +123,19 @@ const RegisterScreen = () => {
           validationSchema={ValidationSchema}
           onSubmit={handleSubmit}
         >
-          {({ handleChange, handleBlur, handleSubmit, setFieldValue, values, errors, touched, isSubmitting, status }) => (
+          {({ handleChange, handleBlur, handleSubmit, setFieldValue, values, errors, touched, isSubmitting, status, setStatus }) => (
             <Card variant="elevated" style={styles.formCard}>
               <Input
                 label="Full Name *"
                 placeholder="John Doe"
                 value={values.name}
-                onChangeText={handleChange('name')}
+                onChangeText={(value) => {
+                  if (combinedErrorMessage) {
+                    dispatch(clearError());
+                  }
+                  setStatus(undefined);
+                  handleChange('name')(value);
+                }}
                 onBlur={handleBlur('name')}
                 error={touched.name && errors.name ? errors.name : ''}
                 leftIcon="person-outline"
@@ -118,9 +146,15 @@ const RegisterScreen = () => {
                 label="Email Address *"
                 placeholder="you@example.com"
                 value={values.email}
-                onChangeText={handleChange('email')}
+                onChangeText={(value) => {
+                  if (combinedErrorMessage) {
+                    dispatch(clearError());
+                  }
+                  setStatus(undefined);
+                  handleChange('email')(value);
+                }}
                 onBlur={handleBlur('email')}
-                error={touched.email && errors.email ? errors.email : ''}
+                error={errors.email || (touched.email && errors.email ? errors.email : '')}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 leftIcon="mail-outline"
@@ -130,7 +164,13 @@ const RegisterScreen = () => {
                 label="Phone Number (Optional)"
                 placeholder="+94 77 123 4567"
                 value={values.phone}
-                onChangeText={handleChange('phone')}
+                onChangeText={(value) => {
+                  if (combinedErrorMessage) {
+                    dispatch(clearError());
+                  }
+                  setStatus(undefined);
+                  handleChange('phone')(value);
+                }}
                 onBlur={handleBlur('phone')}
                 error={touched.phone && errors.phone ? errors.phone : ''}
                 keyboardType="phone-pad"
@@ -140,7 +180,13 @@ const RegisterScreen = () => {
               <DateSelectInput
                 label="Date of Birth (Optional)"
                 value={values.dateOfBirth}
-                onChange={(value) => setFieldValue('dateOfBirth', value)}
+                onChange={(value) => {
+                  if (combinedErrorMessage) {
+                    dispatch(clearError());
+                  }
+                  setStatus(undefined);
+                  setFieldValue('dateOfBirth', value);
+                }}
                 error={touched.dateOfBirth && errors.dateOfBirth ? errors.dateOfBirth : ''}
               />
 
@@ -169,7 +215,13 @@ const RegisterScreen = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
-                      onPress={() => handleChange('gender')(gender)}
+                      onPress={() => {
+                        if (combinedErrorMessage) {
+                          dispatch(clearError());
+                        }
+                        setStatus(undefined);
+                        handleChange('gender')(gender);
+                      }}
                     >
                       <Text style={{
                         color: values.gender === gender ? colors.primary : colors.textSecondary,
@@ -188,7 +240,13 @@ const RegisterScreen = () => {
                 label="Password *"
                 placeholder="At least 8 characters"
                 value={values.password}
-                onChangeText={handleChange('password')}
+                onChangeText={(value) => {
+                  if (combinedErrorMessage) {
+                    dispatch(clearError());
+                  }
+                  setStatus(undefined);
+                  handleChange('password')(value);
+                }}
                 onBlur={handleBlur('password')}
                 error={touched.password && errors.password ? errors.password : ''}
                 secureTextEntry
@@ -201,7 +259,13 @@ const RegisterScreen = () => {
                 label="Confirm Password *"
                 placeholder="Re-enter your password"
                 value={values.confirmPassword}
-                onChangeText={handleChange('confirmPassword')}
+                onChangeText={(value) => {
+                  if (combinedErrorMessage) {
+                    dispatch(clearError());
+                  }
+                  setStatus(undefined);
+                  handleChange('confirmPassword')(value);
+                }}
                 onBlur={handleBlur('confirmPassword')}
                 error={touched.confirmPassword && errors.confirmPassword ? errors.confirmPassword : ''}
                 secureTextEntry

@@ -106,12 +106,8 @@ const WorkoutTrackerScreen = () => {
         // exerciseId may be a populated object or a raw ObjectId string
         const populatedExercise = (ex.exerciseId && typeof ex.exerciseId === 'object') ? ex.exerciseId : null;
 
-        // Resolve videoUrl: prefer populated exercise data, fall back to direct field
         const rawVideoUrl = populatedExercise?.videoUrl || ex.videoUrl;
-        // Handle Cloudinary object format ({ secure_url: "..." })
-        const resolvedVideoUrl = rawVideoUrl && typeof rawVideoUrl === 'object' && rawVideoUrl.secure_url
-            ? rawVideoUrl.secure_url
-            : rawVideoUrl;
+        const resolvedVideoUrl = rawVideoUrl ? (getFileUrl(rawVideoUrl) || rawVideoUrl) : null;
 
         return {
             ...ex,

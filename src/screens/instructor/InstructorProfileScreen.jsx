@@ -127,8 +127,6 @@ const InstructorProfileScreen = () => {
   const specializations = profileData.specializations || [];
   const specialty = profileData.specialty || specializations[0] || 'Fitness';
   const experience = profileData.experience || 0;
-  const rating = stats.avgRating || 0;
-
   const displayStats = [
     {
       label: 'Total Clients',
@@ -141,12 +139,6 @@ const InstructorProfileScreen = () => {
       value: stats.totalSessions?.toString() || '0',
       icon: 'fitness',
       color: colors.success
-    },
-    {
-      label: 'Rating',
-      value: rating ? rating.toFixed(1) : '0.0',
-      icon: 'star',
-      color: colors.warning
     },
     {
       label: 'Experience',
@@ -180,12 +172,6 @@ const InstructorProfileScreen = () => {
             ) : (
               <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
                 <Text style={[styles.avatarText, { color: colors.white }]}>{name.charAt(0).toUpperCase()}</Text>
-              </View>
-            )}
-            {rating > 0 && (
-              <View style={[styles.ratingContainer, { backgroundColor: colors.card }]}>
-                <Ionicons name="star" size={16} color={colors.warning} />
-                <Text style={[styles.ratingText, { color: colors.text }]}>{rating.toFixed(1)}</Text>
               </View>
             )}
           </View>

@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { instructorAPI } from '../../api/instructor.api';
 import { userAPI } from '../../api/user.api';
+import { setProfile } from '../../store/slices/userSlice';
+import { getFileUrl } from '../../utils/helpers';
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
+import KeyboardAvoidingWrapper from '../../components/common/KeyboardAvoidingWrapper';
 
 const SPECIALIZATIONS = [
   'weight-loss',
@@ -22,6 +26,7 @@ const SPECIALIZATIONS = [
 const EditInstructorProfileScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const dispatch = useDispatch();
   const { theme: dynamicTheme, isDark } = useTheme();
   const colors = dynamicTheme.colors;
   const { profile: initialProfile } = route.params || {};
@@ -49,27 +54,18 @@ const EditInstructorProfileScreen = () => {
   const [afterPhotoUri, setAfterPhotoUri] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(null); // 'before', 'after', or null
 
-  // Helper to normalize photo URL (handle both string and object formats)
-  const normalizePhotoUrl = (photo) => {
-    if (!photo) return null;
-    if (typeof photo === 'string') return photo;
-    if (typeof photo === 'object' && photo.secure_url) return photo.secure_url;
-    if (typeof photo === 'object' && photo.url) return photo.url;
-    return null;
-  };
-
   useEffect(() => {
     if (initialProfile) {
       setName(initialProfile.name || '');
       setPhone(initialProfile.phone || '');
-      setProfilePictureUri(initialProfile.profilePicture || null);
+      setProfilePictureUri(initialProfile.profilePicture ? (getFileUrl(initialProfile.profilePicture) || initialProfile.profilePicture) : null);
       setBio(initialProfile.bio || '');
       setExperience(String(initialProfile.experience || ''));
       setMonthlyRate(String(initialProfile.monthlyRate || ''));
       setSpecializations(initialProfile.specializations || []);
       setIsAvailable(initialProfile.isAvailable !== undefined ? initialProfile.isAvailable : true);
-      setBeforePhotoUri(normalizePhotoUrl(initialProfile.beforePhoto));
-      setAfterPhotoUri(normalizePhotoUrl(initialProfile.afterPhoto));
+      setBeforePhotoUri(initialProfile.beforePhoto ? (getFileUrl(initialProfile.beforePhoto) || initialProfile.beforePhoto) : null);
+      setAfterPhotoUri(initialProfile.afterPhoto ? (getFileUrl(initialProfile.afterPhoto) || initialProfile.afterPhoto) : null);
     }
   }, [initialProfile]);
 
@@ -177,10 +173,10 @@ const EditInstructorProfileScreen = () => {
         const profileRes = await instructorAPI.getMyProfile();
         const profileData = profileRes?.data?.instructor || profileRes?.data || profileRes;
         if (photoType === 'before') {
-          setBeforePhotoUri(normalizePhotoUrl(profileData.beforePhoto));
+          setBeforePhotoUri(profileData.beforePhoto ? (getFileUrl(profileData.beforePhoto) || profileData.beforePhoto) : null);
           setBeforePhoto(null);
         } else {
-          setAfterPhotoUri(normalizePhotoUrl(profileData.afterPhoto));
+          setAfterPhotoUri(profileData.afterPhoto ? (getFileUrl(profileData.afterPhoto) || profileData.afterPhoto) : null);
           setAfterPhoto(null);
         }
       } catch (reloadError) {
@@ -256,30 +252,31 @@ const EditInstructorProfileScreen = () => {
       }
 
       // Upload profile picture if changed
-      if (profilePicture) {
+            if (profilePicture) {
         try {
           const formData = new FormData();
           const uri = profilePicture.uri;
-          
-          // Extract filename and determine type from URI or use defaults
+
           let filename = 'profile.jpg';
-          let imageType = 'image/jpeg'; // Default
-          
-          // Try to get filename from URI
+          let imageType = 'image/jpeg';
+
           if (uri) {
             const uriParts = uri.split('/');
             const lastPart = uriParts[uriParts.length - 1];
+
             if (lastPart && lastPart.includes('.')) {
-              filename = lastPart.split('?')[0]; // Remove query params if any
+              filename = lastPart.split('?')[0];
             }
-            
-            // Determine MIME type - ImagePicker may return "image" instead of "image/jpeg"
-            // Check if profilePicture.type is a valid MIME type (contains a slash)
-            if (profilePicture.type && typeof profilePicture.type === 'string' && profilePicture.type.includes('/')) {
+
+            if (
+              profilePicture.type &&
+              typeof profilePicture.type === 'string' &&
+              profilePicture.type.includes('/')
+            ) {
               imageType = profilePicture.type.trim();
             } else {
-              // ImagePicker returned "image" or invalid type - detect from filename extension
               const ext = filename.split('.').pop()?.toLowerCase();
+
               if (ext === 'png') {
                 imageType = 'image/png';
               } else if (ext === 'gif') {
@@ -287,32 +284,45 @@ const EditInstructorProfileScreen = () => {
               } else if (ext === 'webp') {
                 imageType = 'image/webp';
               } else {
-                imageType = 'image/jpeg'; // Default
+                imageType = 'image/jpeg';
               }
             }
           }
-          
-          // Final validation - ensure type is always a valid MIME type string
-          if (!imageType || typeof imageType !== 'string' || !imageType.includes('/')) {
+
+          if (
+            !imageType ||
+            typeof imageType !== 'string' ||
+            !imageType.includes('/')
+          ) {
             imageType = 'image/jpeg';
           }
-          
-          // FormData structure for React Native
-          // Use the URI as-is (ImagePicker returns correct format for each platform)
+
           formData.append('image', {
-            uri: uri,
+            uri,
             name: filename,
-            type: imageType, // Must be a valid MIME type like "image/jpeg"
+            type: imageType,
           });
-          
+
           await userAPI.uploadProfilePicture(formData);
+
+          const profileRes = await userAPI.getProfile();
+          const profileData =
+            profileRes?.data?.user || profileRes?.data || profileRes;
+
+          if (profileData) {
+            dispatch(setProfile(profileData));
+          }
         } catch (uploadError) {
-          const uploadErrorMessage = uploadError?.response?.data?.message || 
-                                    uploadError?.response?.data?.error || 
-                                    uploadError?.message || 
-                                    'Image upload failed';
-          // Don't fail the entire save if image upload fails
-          Alert.alert('Warning', `Profile updated but image upload failed: ${uploadErrorMessage}. Please try uploading the image again.`);
+          const uploadErrorMessage =
+            uploadError?.response?.data?.message ||
+            uploadError?.response?.data?.error ||
+            uploadError?.message ||
+            'Image upload failed';
+
+          Alert.alert(
+            'Warning',
+            `Profile updated but image upload failed: ${uploadErrorMessage}. Please try uploading the image again.`
+          );
         }
       }
 
@@ -358,6 +368,18 @@ const EditInstructorProfileScreen = () => {
       // Always update instructor profile
       await instructorAPI.updateProfile(instructorUpdates);
 
+      // After successful update, dispatch to Redux to keep profile in sync
+      // Fetch fresh profile data and update Redux
+      try {
+        const profileRes = await userAPI.getProfile();
+        const profileData = profileRes?.data?.user || profileRes?.data || profileRes;
+        if (profileData) {
+          dispatch(setProfile(profileData));
+        }
+      } catch (e) {
+        console.log('Failed to refresh profile in Redux:', e);
+      }
+
       Alert.alert('Success', 'Profile updated successfully', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
@@ -373,7 +395,10 @@ const EditInstructorProfileScreen = () => {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingWrapper
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.content}
+    >
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Edit Profile</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Update your instructor profile information</Text>
@@ -628,7 +653,7 @@ const EditInstructorProfileScreen = () => {
           </>
         )}
       </TouchableOpacity>
-    </ScrollView>
+    </KeyboardAvoidingWrapper>
   );
 };
 

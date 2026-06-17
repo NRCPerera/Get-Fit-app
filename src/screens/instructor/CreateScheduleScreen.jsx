@@ -11,7 +11,6 @@ import { instructorAPI } from '../../api/instructor.api';
 import KeyboardAvoidingWrapper from '../../components/common/KeyboardAvoidingWrapper';
 
 const SCHEDULE_TYPES = ['1-day', '2-day', '3-day'];
-const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const DIFFICULTY_OPTIONS = ['beginner', 'intermediate', 'advanced'];
 const GOAL_OPTIONS = ['Weight Loss', 'Muscle Building', 'Strength Training', 'Cardio Fitness', 'Flexibility', 'Endurance'];
 
@@ -30,7 +29,7 @@ const CreateScheduleScreen = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [exercises, setExercises] = useState([]); // Structure: { exerciseId, exerciseName, scheduleDay, setReps: [{sets, reps}], duration, restTime, notes, dayOfWeek }
+  const [exercises, setExercises] = useState([]); // { exerciseId, exerciseName, scheduleDay, setReps: [{sets, reps}], duration, restTime, notes }
   const [selectedDay, setSelectedDay] = useState(1); // For multi-day schedules
   const [isTemplate, setIsTemplate] = useState(false);
   const [assignedTo, setAssignedTo] = useState(clientId || '');
@@ -102,12 +101,11 @@ const CreateScheduleScreen = () => {
     const newExercise = {
       exerciseId: exercise._id,
       exerciseName: exercise.name,
-      scheduleDay: scheduleType === '1-day' ? undefined : selectedDay,
-      setReps: [{ sets: '', reps: '' }], // Start with one set-rep combination
+      scheduleDay: scheduleType === '1-day' ? 1 : selectedDay,
+      setReps: [{ sets: '', reps: '' }],
       duration: '',
       restTime: '',
       notes: '',
-      dayOfWeek: scheduleType === '1-day' ? '' : undefined, // Only for 1-day schedules
     };
     setExercises(prev => [...prev, newExercise]);
     setShowExerciseModal(false);
@@ -197,26 +195,17 @@ const CreateScheduleScreen = () => {
     }));
   };
 
-  // When schedule type changes, update exercises
   useEffect(() => {
     if (scheduleType === '1-day') {
-      // Convert scheduleDay to dayOfWeek for 1-day schedules
-      setExercises(prev => prev.map(ex => ({
-        ...ex,
-        scheduleDay: undefined,
-        dayOfWeek: ex.dayOfWeek || ''
-      })));
-      setSelectedDay(1);
+      setExercises(prev => prev.map(ex => ({ ...ex, scheduleDay: 1 })));
     } else {
-      // Convert dayOfWeek to scheduleDay for multi-day schedules
       const numDays = scheduleType === '2-day' ? 2 : 3;
       setExercises(prev => prev.map((ex, idx) => ({
         ...ex,
-        scheduleDay: ex.scheduleDay || ((idx % numDays) + 1),
-        dayOfWeek: undefined
+        scheduleDay: ex.scheduleDay && ex.scheduleDay <= numDays ? ex.scheduleDay : ((idx % numDays) + 1),
       })));
-      setSelectedDay(1);
     }
+    setSelectedDay(1);
   }, [scheduleType]);
 
   const selectClient = (client) => {
@@ -260,14 +249,8 @@ const CreateScheduleScreen = () => {
             }
           }
 
-          // Add scheduleDay for multi-day schedules
-          if (scheduleType !== '1-day' && ex.scheduleDay) {
+          if (ex.scheduleDay) {
             exerciseData.scheduleDay = ex.scheduleDay;
-          }
-
-          // Add dayOfWeek for 1-day schedules
-          if (scheduleType === '1-day' && ex.dayOfWeek) {
-            exerciseData.dayOfWeek = ex.dayOfWeek;
           }
 
           return exerciseData;
@@ -362,34 +345,6 @@ const CreateScheduleScreen = () => {
             />
           </View>
         </View>
-        {scheduleType === '1-day' && (
-          <View style={styles.fieldRow}>
-            <View style={[styles.field, { flex: 1 }]}>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Day of Week</Text>
-              <View style={styles.daySelector}>
-                {DAYS.map(day => (
-                  <TouchableOpacity
-                    key={day}
-                    style={[
-                      styles.dayButton,
-                      { backgroundColor: colors.backgroundSecondary },
-                      item.dayOfWeek === day && { backgroundColor: colors.primary }
-                    ]}
-                    onPress={() => updateExercise(index, 'dayOfWeek', item.dayOfWeek === day ? '' : day)}
-                  >
-                    <Text style={[
-                      styles.dayButtonText,
-                      { color: colors.textSecondary },
-                      item.dayOfWeek === day && { color: colors.white, fontWeight: theme.typography.fontWeight.semibold }
-                    ]}>
-                      {day.charAt(0).toUpperCase() + day.slice(1, 3)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-        )}
         <View style={styles.field}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Notes</Text>
           <TextInput

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, StatusBar, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
@@ -34,6 +34,14 @@ const MySchedulesScreen = () => {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!loading) {
+        load();
+      }
+    }, [load, loading])
+  );
 
   const onRefresh = useCallback(() => { setRefreshing(true); load(); }, [load]);
 

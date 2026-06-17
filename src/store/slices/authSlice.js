@@ -3,6 +3,14 @@ import * as SecureStore from 'expo-secure-store';
 import { authAPI } from '../../api/auth.api';
 import { initializePushNotifications, removePushTokenFromBackend } from '../../services/pushNotifications';
 
+const getAuthErrorPayload = (error, fallbackMessage, extra = {}) => ({
+  message: error?.response?.data?.error ||
+    error?.response?.data?.message ||
+    error?.message ||
+    fallbackMessage,
+  ...extra,
+});
+
 // Initial state
 const initialState = {
   user: null,
@@ -36,22 +44,21 @@ export const loginUser = createAsyncThunk(
     } catch (error) {
       // Handle rate limiting (429) specifically
       if (error.response?.status === 429) {
-        const errorMessage = error.response?.data?.error ||
-          'Too many login attempts. Please wait 15 minutes before trying again.';
-        return rejectWithValue({
-          message: errorMessage,
-          isRateLimited: true,
-          retryAfter: error.response?.data?.retryAfter || 900, // 15 minutes in seconds
-        });
+        return rejectWithValue(getAuthErrorPayload(
+          error,
+          'Too many login attempts. Please wait 15 minutes before trying again.',
+          {
+            isRateLimited: true,
+            retryAfter: error.response?.data?.retryAfter || 900,
+          }
+        ));
       }
-      // Handle other errors
-      const errorMessage = error.response?.data?.error ||
-        error.response?.data?.message ||
-        'Login failed. Please check your credentials and try again.';
-      return rejectWithValue({
-        message: errorMessage,
-        isRateLimited: false,
-      });
+
+      return rejectWithValue(getAuthErrorPayload(
+        error,
+        'Login failed. Please check your credentials and try again.',
+        { isRateLimited: false }
+      ));
     }
   }
 );
@@ -69,22 +76,21 @@ export const registerUser = createAsyncThunk(
     } catch (error) {
       // Handle rate limiting (429) specifically
       if (error.response?.status === 429) {
-        const errorMessage = error.response?.data?.error ||
-          'Too many registration attempts. Please try again after 15 minutes.';
-        return rejectWithValue({
-          message: errorMessage,
-          isRateLimited: true,
-          retryAfter: error.response?.data?.retryAfter || 900, // 15 minutes in seconds
-        });
+        return rejectWithValue(getAuthErrorPayload(
+          error,
+          'Too many registration attempts. Please try again after 15 minutes.',
+          {
+            isRateLimited: true,
+            retryAfter: error.response?.data?.retryAfter || 900,
+          }
+        ));
       }
-      // Handle other errors
-      const errorMessage = error.response?.data?.error ||
-        error.response?.data?.message ||
-        'Registration failed. Please check your information and try again.';
-      return rejectWithValue({
-        message: errorMessage,
-        isRateLimited: false,
-      });
+
+      return rejectWithValue(getAuthErrorPayload(
+        error,
+        'Registration failed. Please check your information and try again.',
+        { isRateLimited: false }
+      ));
     }
   }
 );
@@ -105,12 +111,10 @@ export const verifyOTP = createAsyncThunk(
       }
       return { user };
     } catch (error) {
-      const errorMessage = error.response?.data?.error ||
-        error.response?.data?.message ||
-        'OTP verification failed. Please check your code and try again.';
-      return rejectWithValue({
-        message: errorMessage,
-      });
+      return rejectWithValue(getAuthErrorPayload(
+        error,
+        'OTP verification failed. Please check your code and try again.'
+      ));
     }
   }
 );
@@ -122,12 +126,10 @@ export const resendOTP = createAsyncThunk(
       const resp = await authAPI.resendOTP(email);
       return resp;
     } catch (error) {
-      const errorMessage = error.response?.data?.error ||
-        error.response?.data?.message ||
-        'Failed to resend OTP. Please try again.';
-      return rejectWithValue({
-        message: errorMessage,
-      });
+      return rejectWithValue(getAuthErrorPayload(
+        error,
+        'Failed to resend OTP. Please try again.'
+      ));
     }
   }
 );
@@ -155,7 +157,7 @@ export const logoutUser = createAsyncThunk(
       await SecureStore.deleteItemAsync('refreshToken');
       await SecureStore.deleteItemAsync('user');
 
-      return rejectWithValue(error.response?.data?.error || 'Logout failed');
+      return rejectWithValue(getAuthErrorPayload(error, 'Logout failed'));
     }
   }
 );
@@ -179,7 +181,7 @@ export const refreshToken = createAsyncThunk(
       await SecureStore.deleteItemAsync('refreshToken');
       await SecureStore.deleteItemAsync('user');
 
-      return rejectWithValue(error.response?.data?.error || 'Token refresh failed');
+      return rejectWithValue(getAuthErrorPayload(error, 'Token refresh failed'));
     }
   }
 );
@@ -259,12 +261,13 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
+        const user = action.payload.user || null;
         state.loading = false;
-        state.user = action.payload.user;
+        state.user = user;
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
-        state.isAuthenticated = true;
-        state.role = action.payload.user.role;
+        state.isAuthenticated = Boolean(user && action.payload.accessToken);
+        state.role = user?.role || null;
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
@@ -279,17 +282,18 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
+        const user = action.payload.user || null;
         state.loading = false;
-        state.user = action.payload.user;
+        state.user = user;
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
-        state.role = action.payload.user.role;
+        state.role = user?.role || null;
         state.error = null;
         // Only set isAuthenticated to true if OTP verification is not required
         // If OTP verification is required, user must verify OTP first
         // This prevents automatic navigation to HomeScreen before OTP verification
         if (!action.payload.requiresOTPVerification) {
-          state.isAuthenticated = true;
+          state.isAuthenticated = Boolean(user && action.payload.accessToken);
           state.pendingEmailVerification = null;
         } else {
           state.isAuthenticated = false; // Keep in auth flow until OTP is verified
@@ -308,11 +312,12 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(verifyOTP.fulfilled, (state, action) => {
+        const user = action.payload.user || null;
         state.loading = false;
-        if (action.payload.user) {
-          state.user = action.payload.user;
+        if (user) {
+          state.user = user;
           state.isAuthenticated = true;
-          state.role = action.payload.user.role;
+          state.role = user.role;
           state.pendingEmailVerification = null; // Clear pending verification
         }
         state.error = null;
@@ -380,14 +385,19 @@ const authSlice = createSlice({
       .addCase(loadStoredAuth.fulfilled, (state, action) => {
         state.loading = false;
         if (action.payload) {
-          state.user = action.payload.user;
+          const user = action.payload.user || null;
+          state.user = user;
           state.accessToken = action.payload.accessToken;
           state.refreshToken = action.payload.refreshToken;
-          state.role = action.payload.user.role;
+          state.role = user?.role || null;
           // Only set isAuthenticated to true if email is verified
           // This prevents users with unverified emails from accessing the app
-          state.isAuthenticated = action.payload.user.isEmailVerified === true;
+          state.isAuthenticated = user?.isEmailVerified === true;
         } else {
+          state.user = null;
+          state.accessToken = null;
+          state.refreshToken = null;
+          state.role = null;
           state.isAuthenticated = false;
         }
       })
@@ -400,4 +410,3 @@ const authSlice = createSlice({
 
 export const { clearError, setLoading, updateUser } = authSlice.actions;
 export default authSlice.reducer;
-

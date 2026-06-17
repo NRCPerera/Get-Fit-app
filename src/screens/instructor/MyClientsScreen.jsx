@@ -388,14 +388,14 @@ const MyClientsScreen = () => {
                       <View style={styles.detailItem}>
                         <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
                         <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-                          Subscribed {formatDate(client.subscribedAt)}
+                          Subscribed {formatDate(client.startDate || client.subscribedAt)}
                         </Text>
                       </View>
-                      {client.expiresAt && (
+                      {(client.endDate || client.expiresAt) && (
                         <View style={styles.detailItem}>
                           <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
                           <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-                            Expires {formatDate(client.expiresAt)}
+                            Expires {formatDate(client.endDate || client.expiresAt)}
                           </Text>
                         </View>
                       )}

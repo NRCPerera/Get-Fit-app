@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-na
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
 import { userAPI } from '../../api/user.api';
+import { updateUserProfile } from '../../store/slices/userSlice';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
@@ -16,15 +18,17 @@ import BackButton from '../../components/common/BackButton';
 
 const EditProfileScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
   const { theme: dynamicTheme, isDark } = useTheme();
   const colors = dynamicTheme.colors;
+  const { profile } = useSelector((state) => state.user);
+  
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [avatar, setAvatar] = useState(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [currentProfile, setCurrentProfile] = useState(null);
 
   const [current, setCurrent] = useState('');
   const [password, setPassword] = useState('');
@@ -38,11 +42,11 @@ const EditProfileScreen = () => {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const res = await userAPI.getProfile();
-      const data = res?.data?.user || res?.data || res;
-      setCurrentProfile(data);
-      setName(data?.name || '');
-      setPhone(data?.phone || '');
+      // Profile is already in Redux, just populate the form
+      if (profile) {
+        setName(profile?.name || '');
+        setPhone(profile?.phone || '');
+      }
     } catch (e) {
     } finally {
       setLoading(false);
@@ -61,9 +65,14 @@ const EditProfileScreen = () => {
   const saveProfile = async () => {
     try {
       setSaving(true);
-      if (name || phone) {
-        await userAPI.updateProfile({ name: name || undefined, phone: phone || undefined });
-      }
+      
+      // Prepare profile data
+      const profileData = {};
+      if (name) profileData.name = name;
+      if (phone) profileData.phone = phone;
+
+      // Prepare avatar FormData if avatar was selected
+      let avatarFormData = null;
       if (avatar) {
         const fd = new FormData();
 
@@ -97,37 +106,62 @@ const EditProfileScreen = () => {
           name: filename,
           type: imageType, // Must be a valid MIME type like "image/jpeg"
         });
-
-        await userAPI.uploadProfilePicture(fd);
+        
+        avatarFormData = fd;
       }
+
+      // Dispatch the update thunk with both profile data and avatar
+      const result = await dispatch(updateUserProfile({
+        profileData: Object.keys(profileData).length > 0 ? profileData : null,
+        avatarFormData,
+      })).unwrap();
+
       Alert.alert('Success', 'Profile updated successfully');
       setAvatar(null);
-      await loadProfile();
     } catch (e) {
-      Alert.alert('Error', e?.response?.data?.message || 'Failed to update profile');
+      Alert.alert('Error', e?.message || 'Failed to update profile');
     } finally {
       setSaving(false);
     }
   };
 
   const changePassword = async () => {
-    if (!current || !password || password !== confirm) {
-      Alert.alert('Error', 'Please check your password inputs');
+    if (!current.trim()) {
+      Alert.alert('Error', 'Please enter your current password');
+      return;
+    }
+    if (!password.trim()) {
+      Alert.alert('Error', 'Please enter a new password');
+      return;
+    }
+    if (password !== confirm) {
+      Alert.alert('Error', 'New passwords do not match');
       return;
     }
     if (password.length < 8) {
       Alert.alert('Error', 'Password must be at least 8 characters');
       return;
     }
+    if (current === password) {
+      Alert.alert('Error', 'New password must be different from your current password');
+      return;
+    }
     try {
       setChanging(true);
-      await userAPI.changePassword({ currentPassword: current, newPassword: password });
+      const response = await userAPI.changePassword({
+        currentPassword: current,
+        newPassword: password,
+      });
+      if (!response?.success) {
+        Alert.alert('Error', response?.message || 'Failed to change password');
+        return;
+      }
       Alert.alert('Success', 'Password changed successfully');
       setCurrent('');
       setPassword('');
       setConfirm('');
     } catch (e) {
-      Alert.alert('Error', e?.response?.data?.message || 'Failed to change password');
+      Alert.alert('Error', e?.response?.data?.message || e?.message || 'Failed to change password');
     } finally {
       setChanging(false);
     }
@@ -160,9 +194,9 @@ const EditProfileScreen = () => {
         <View style={styles.avatarContainer}>
           {avatar ? (
             <Image source={{ uri: avatar.uri }} style={styles.avatar} resizeMode="cover" />
-          ) : currentProfile?.profilePicture ? (
+          ) : profile?.profilePicture ? (
             <Image
-              source={{ uri: currentProfile.profilePicture }}
+              source={{ uri: profile.profilePicture }}
               style={styles.avatar}
               resizeMode="cover"
             />
@@ -231,6 +265,18 @@ const EditProfileScreen = () => {
           showPasswordToggle
           leftIcon="lock-closed-outline"
         />
+        <TouchableOpacity
+          onPress={() => navigation.navigate('ForgotPassword', {
+            fromEditProfile: true,
+            email: currentProfile?.email || '',
+          })}
+          activeOpacity={0.7}
+          style={styles.forgotPasswordLink}
+        >
+          <Text style={[styles.forgotPasswordText, { color: colors.primary }]}>
+            Forgot your current password?
+          </Text>
+        </TouchableOpacity>
         <Input
           label="New Password"
           placeholder="At least 8 characters"
@@ -322,6 +368,15 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: theme.spacing[2],
+  },
+  forgotPasswordLink: {
+    alignSelf: 'flex-end',
+    marginTop: -theme.spacing[2],
+    marginBottom: theme.spacing[4],
+  },
+  forgotPasswordText: {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.semibold,
   },
 });
 

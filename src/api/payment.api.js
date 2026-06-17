@@ -21,29 +21,8 @@ export const paymentAPI = {
     const res = await apiClient.post('/payments/subscription', data);
     return res.data;
   },
-  createSubscriptionPaymentWithSavedCard: async (data) => {
-    const res = await apiClient.post('/payments/subscription/saved-card', data);
-    return res.data;
-  },
   completeSubscriptionPayment: async (paymentId) => {
     const res = await apiClient.post('/payments/subscription/complete', { paymentId });
-    return res.data;
-  },
-  // Saved card methods
-  saveCard: async (cardData) => {
-    const res = await apiClient.post('/payments/cards', cardData);
-    return res.data;
-  },
-  getSavedCards: async () => {
-    const res = await apiClient.get('/payments/cards');
-    return res.data;
-  },
-  deleteSavedCard: async (cardId) => {
-    const res = await apiClient.delete(`/payments/cards/${cardId}`);
-    return res.data;
-  },
-  setDefaultCard: async (cardId) => {
-    const res = await apiClient.patch(`/payments/cards/${cardId}/default`);
     return res.data;
   },
   // Check payment status - called when user returns from PayHere

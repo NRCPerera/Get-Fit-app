@@ -52,22 +52,20 @@ export const calculateBMI = (weightKg, heightCm) => {
 };
 
 /**
- * Get full URL for an uploaded file from a relative path or Cloudinary object
- * @param {String|Object} relativePath - Relative path from uploads directory (e.g., "profiles/image.jpg") or Cloudinary object with secure_url
+ * Get full URL for an uploaded file from a relative path or Cloudinary asset
+ * @param {String|Object} relativePath - Relative path, flat URL string, or { secureUrl } / legacy { secure_url }
  * @returns {String|null} - Full URL to the file, or null if path is invalid
  */
 export const getFileUrl = (relativePath) => {
   if (!relativePath) return null;
   
-  // Handle Cloudinary object (object with secure_url or url property)
   if (typeof relativePath === 'object') {
-    if (relativePath.secure_url) {
-      return relativePath.secure_url;
+    const url = relativePath.secureUrl || relativePath.secure_url || relativePath.url;
+    if (url && typeof url === 'string') {
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
     }
-    if (relativePath.url) {
-      return relativePath.url;
-    }
-    // If object but no URL property, return null
     return null;
   }
   

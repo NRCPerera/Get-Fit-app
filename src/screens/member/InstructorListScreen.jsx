@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Image, StatusBar, Platform, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Image, StatusBar, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -71,9 +71,6 @@ const InstructorListScreen = () => {
     const name = item.name || item?.user?.name || 'Instructor';
     const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
-    const rating = item?.stats?.avgRating || item?.rating || 0;
-    const displayRating = typeof rating === 'number' && rating > 0 ? rating.toFixed(1) : 'New';
-
     const specialty = item.specialty || item.specializations?.[0] || 'Fitness Trainer';
     const experience = item.experience ? `${item.experience} ${item.experience === 1 ? 'year' : 'years'}` : null;
     const monthlyRate = item.monthlyRate ? `LKR ${item.monthlyRate}/mo` : null;
@@ -109,10 +106,6 @@ const InstructorListScreen = () => {
           <View style={styles.detailsContainer}>
             <View style={styles.nameRow}>
               <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{name}</Text>
-              <View style={[styles.ratingContainer, { backgroundColor: colors.warning + '15' }]}>
-                <Ionicons name="star" size={14} color={colors.warning} />
-                <Text style={[styles.rating, { color: colors.text }]}>{displayRating}</Text>
-              </View>
             </View>
 
             <View style={styles.specialtyRow}>
@@ -161,7 +154,11 @@ const InstructorListScreen = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+    >
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
       {/* Gradient Header */}
@@ -218,6 +215,8 @@ const InstructorListScreen = () => {
           renderItem={renderItem}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
           contentContainerStyle={styles.listContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           ListEmptyComponent={
             <View style={[styles.emptyState, { backgroundColor: colors.background }]}>
               <Ionicons name="people-outline" size={64} color={colors.textTertiary} />
@@ -263,7 +262,7 @@ const InstructorListScreen = () => {
           </TouchableOpacity>
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

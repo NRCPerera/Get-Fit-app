@@ -266,22 +266,10 @@ const InstructorDetailScreen = () => {
   const profilePicture = instructor?.user?.profilePicture || instructor?.profilePicture;
   const profilePictureUrl = profilePicture ? getFileUrl(profilePicture) : null;
 
-  // Helper to normalize photo URL (handle both string and object formats)
-  const normalizePhotoUrl = (photo) => {
-    if (!photo) return null;
-    if (typeof photo === 'string') return photo;
-    if (typeof photo === 'object' && photo.secure_url) return photo.secure_url;
-    if (typeof photo === 'object' && photo.url) return photo.url;
-    return null;
-  };
-
-  const beforePhotoUrl = normalizePhotoUrl(instructor?.beforePhoto);
-  const afterPhotoUrl = normalizePhotoUrl(instructor?.afterPhoto);
+  const beforePhotoUrl = instructor?.beforePhoto ? getFileUrl(instructor.beforePhoto) : null;
+  const afterPhotoUrl = instructor?.afterPhoto ? getFileUrl(instructor.afterPhoto) : null;
 
   const initials = instructorName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-
-  const rating = instructor?.stats?.avgRating || 0;
-  const displayRating = typeof rating === 'number' && rating > 0 ? rating.toFixed(1) : null;
 
   const isAvailable = instructor?.isAvailable !== false;
   const acceptingMembers = instructor?.acceptingMembers !== false;
@@ -331,12 +319,6 @@ const InstructorDetailScreen = () => {
               <View style={styles.profileInfo}>
                 <View style={styles.nameRow}>
                   <Text style={[styles.name, { color: colors.text }]}>{instructorName}</Text>
-                  {displayRating && (
-                    <View style={[styles.ratingBadge, { backgroundColor: colors.warning + '20' }]}>
-                      <Ionicons name="star" size={14} color={colors.warning} />
-                      <Text style={[styles.ratingText, { color: colors.text }]}>{displayRating}</Text>
-                    </View>
-                  )}
                 </View>
                 {instructorEmail && (
                   <Text style={[styles.email, { color: colors.textSecondary }]}>{instructorEmail}</Text>
@@ -644,18 +626,6 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize['2xl'],
     fontWeight: theme.typography.fontWeight.bold,
     letterSpacing: 0.3,
-  },
-  ratingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing[1],
-    paddingHorizontal: theme.spacing[2],
-    paddingVertical: theme.spacing[1],
-    borderRadius: 10,
-  },
-  ratingText: {
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.semibold,
   },
   email: {
     fontSize: theme.typography.fontSize.sm,

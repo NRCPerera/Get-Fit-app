@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "GetFit - Gym Management",
+    "name": "GetFit",
     "slug": "gym-management-app",
-    "version": "1.2.2",
+    "version": "1.2.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -60,7 +60,8 @@
           "color": "#6366f1",
           "sounds": []
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

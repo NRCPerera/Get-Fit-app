@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, Image, TouchableOpacity, TextInput, StatusBar, Modal, Dimensions, Pressable } from 'react-native';
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
+import { View, Text, StyleSheet, FlatList, RefreshControl, Image, TouchableOpacity, TextInput, StatusBar, Modal, Dimensions, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import { exerciseAPI } from '../../api/exercise.api';
 import Loading from '../../components/common/Loading';
 import { theme } from '../../styles/theme';
@@ -33,16 +34,16 @@ const getCategoryIcon = (category) => {
   }
 };
 
-// Video Player Modal Component
+// ─── Video Player Modal ──────────────────────────────────────────────────────
+
 const VideoPlayerModal = ({ visible, videoUrl, exerciseName, onClose }) => {
   const source = useMemo(() => ({ uri: getFileUrl(videoUrl) || videoUrl }), [videoUrl]);
 
-  const player = useVideoPlayer(source, player => {
-    player.loop = true;
-    player.play();
+  const player = useVideoPlayer(source, (p) => {
+    p.loop = true;
+    p.play();
   });
 
-  // Cleanup when modal closes
   useEffect(() => {
     if (!visible && player) {
       player.pause();
@@ -61,17 +62,13 @@ const VideoPlayerModal = ({ visible, videoUrl, exerciseName, onClose }) => {
     >
       <View style={styles.modalOverlay}>
         <Pressable style={styles.modalBackdrop} onPress={onClose} />
-
         <View style={styles.modalContent}>
-          {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle} numberOfLines={1}>{exerciseName}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-
-          {/* Video Player */}
           <View style={styles.videoContainer}>
             <VideoView
               player={player}
@@ -86,18 +83,108 @@ const VideoPlayerModal = ({ visible, videoUrl, exerciseName, onClose }) => {
   );
 };
 
+// ─── Main Screen ─────────────────────────────────────────────────────────────
+
 const ExerciseLibraryScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { theme: dynamicTheme, isDark } = useTheme();
   const colors = dynamicTheme.colors;
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState('all');
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [videoThumbnails, setVideoThumbnails] = useState({});
 
+  // ── Thumbnail queue refs (never trigger re-renders themselves) ──────────────
+  const thumbnailQueueRef = useRef([]);
+  const isProcessingRef = useRef(false);
+  // Tracks IDs already queued so refreshes don't re-generate existing thumbnails
+  const generatedIdsRef = useRef(new Set());
+
+  // ── Background thumbnail processor ─────────────────────────────────────────
+  // Empty deps: only touches refs and uses a functional setState updater,
+  // so it never goes stale and never needs to be recreated.
+  const processThumbnailQueue = useCallback(async () => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
+
+    const CONCURRENCY = 2; // tune up/down based on device capability
+
+    while (thumbnailQueueRef.current.length > 0) {
+      const batch = thumbnailQueueRef.current.splice(0, CONCURRENCY);
+
+      await Promise.all(
+        batch.map(async ({ videoUrl, exerciseId }) => {
+          try {
+            const { uri } = await VideoThumbnails.getThumbnailAsync(
+              getFileUrl(videoUrl) || videoUrl,
+              { time: 1000 }
+            );
+            // Functional updater avoids closing over stale state
+            setVideoThumbnails((prev) => ({ ...prev, [exerciseId]: uri }));
+          } catch (error) {
+            console.warn(`Thumbnail failed for ${exerciseId}:`, error);
+            // Placeholder stays; no state update needed on failure
+          }
+        })
+      );
+    }
+
+    isProcessingRef.current = false;
+  }, []); // ← intentionally empty
+
+  // ── Queue builder — called once after data loads, never inside renderItem ──
+  const queueThumbnailGeneration = useCallback(
+    (exercises) => {
+      const pending = exercises.filter((item) => {
+        const id = item._id || item.id;
+        // Only queue items that have a video, no static image, and haven't been queued yet
+        return item.videoUrl && !item.imageUrl && !generatedIdsRef.current.has(id);
+      });
+
+      pending.forEach((item) => {
+        const id = item._id || item.id;
+        generatedIdsRef.current.add(id); // mark immediately to prevent duplicate queuing
+        thumbnailQueueRef.current.push({ videoUrl: item.videoUrl, exerciseId: id });
+      });
+
+      if (pending.length > 0) {
+        processThumbnailQueue();
+      }
+    },
+    [processThumbnailQueue]
+  );
+
+  // ── Data loading ────────────────────────────────────────────────────────────
+  const load = useCallback(async () => {
+    try {
+      const res = await exerciseAPI.getAllExercises({ page: 1, limit: 100, status: 'active' });
+      const payload = res?.data?.data || res?.data || res;
+      const exercises = payload.items || payload?.data?.items || [];
+      setItems(exercises);
+
+      // Kick off thumbnail generation AFTER data is set — never during render
+      queueThumbnailGeneration(exercises);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [queueThumbnailGeneration]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    load();
+  }, [load]);
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
   const getMuscleGroupIcon = (group) => {
     switch (group) {
       case 'chest': return 'body';
@@ -112,18 +199,17 @@ const ExerciseLibraryScreen = () => {
     }
   };
 
-  // Extract unique muscle groups from loaded exercises
   const muscleGroups = useMemo(() => {
     const groups = new Set();
-    items.forEach(item => {
+    items.forEach((item) => {
       if (Array.isArray(item.muscleGroups)) {
-        item.muscleGroups.forEach(g => groups.add(g.toLowerCase()));
+        item.muscleGroups.forEach((g) => groups.add(g.toLowerCase()));
       }
     });
     const sorted = [...groups].sort();
     return [
       { key: 'all', label: 'All', icon: 'grid' },
-      ...sorted.map(g => ({
+      ...sorted.map((g) => ({
         key: g,
         label: g.charAt(0).toUpperCase() + g.slice(1),
         icon: getMuscleGroupIcon(g),
@@ -131,159 +217,211 @@ const ExerciseLibraryScreen = () => {
     ];
   }, [items]);
 
-  const load = useCallback(async () => {
-    try {
-      const res = await exerciseAPI.getAllExercises({ page: 1, limit: 100, status: 'active' });
-      const payload = res?.data?.data || res?.data || res;
-      setItems(payload.items || payload?.data?.items || []);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) => {
+        const matchesSearch =
+          !searchQuery ||
+          item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.category?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesMuscle =
+          selectedMuscleGroup === 'all' ||
+          (Array.isArray(item.muscleGroups) &&
+            item.muscleGroups.some(
+              (g) => g.toLowerCase() === selectedMuscleGroup.toLowerCase()
+            ));
+        return matchesSearch && matchesMuscle;
+      }),
+    [items, searchQuery, selectedMuscleGroup]
+  );
+
+  const handlePlayVideo = useCallback((item) => {
+    if (item.videoUrl) setSelectedVideo(item);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
-
-  const onRefresh = useCallback(() => { setRefreshing(true); load(); }, [load]);
-
-  const filteredItems = items.filter(item => {
-    const matchesSearch = !searchQuery ||
-      item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesMuscle = selectedMuscleGroup === 'all' ||
-      (Array.isArray(item.muscleGroups) && item.muscleGroups.some(
-        g => g.toLowerCase() === selectedMuscleGroup.toLowerCase()
-      ));
-    return matchesSearch && matchesMuscle;
-  });
-
-  const handlePlayVideo = (item) => {
-    if (item.videoUrl) {
-      setSelectedVideo(item);
-    }
-  };
-
-  const handleCloseVideo = () => {
+  const handleCloseVideo = useCallback(() => {
     setSelectedVideo(null);
-  };
+  }, []);
 
-  // Card gradient colors for each theme
+  // ── Render helpers ──────────────────────────────────────────────────────────
   const cardGradientColors = isDark
     ? [colors.primaryDark + '40', colors.primary + '20', 'transparent']
     : [colors.primary + '25', colors.primaryLight + '15', 'transparent'];
 
-  const renderItem = ({ item }) => (
-    <View style={styles.exerciseCard}>
-      <LinearGradient
-        colors={cardGradientColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.cardGradientBorder, { borderColor: isDark ? colors.primary + '30' : colors.primary + '20' }]}
-      >
-        <View style={[styles.cardInnerContent, { backgroundColor: colors.card }]}>
-          {item.imageUrl ? (
-            <View style={styles.thumbnailContainer}>
-              <Image
-                source={{ uri: getFileUrl(item.imageUrl) || item.imageUrl }}
-                style={styles.thumbnail}
-                resizeMode="cover"
-              />
-              {item.videoUrl && (
+  // ── renderItem — read-only; never triggers thumbnail generation ─────────────
+  const renderItem = useCallback(
+    ({ item }) => {
+      const itemId = item._id || item.id;
+      const thumbnailUri = videoThumbnails[itemId];
+
+      return (
+        <View style={styles.exerciseCard}>
+          <LinearGradient
+            colors={cardGradientColors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.cardGradientBorder,
+              { borderColor: isDark ? colors.primary + '30' : colors.primary + '20' },
+            ]}
+          >
+            <View style={[styles.cardInnerContent, { backgroundColor: colors.card }]}>
+              {item.imageUrl ? (
+                // ── Static image with optional video play button ───────────────
+                <View style={styles.thumbnailContainer}>
+                  <Image
+                    source={{ uri: getFileUrl(item.imageUrl) || item.imageUrl }}
+                    style={styles.thumbnail}
+                    resizeMode="cover"
+                  />
+                  {item.videoUrl && (
+                    <TouchableOpacity
+                      style={styles.playOverlay}
+                      onPress={() => handlePlayVideo(item)}
+                    >
+                      <LinearGradient
+                        colors={
+                          isDark
+                            ? [colors.primary, colors.primaryDark]
+                            : [colors.primaryLight, colors.primary]
+                        }
+                        style={styles.playButtonGradient}
+                      >
+                        <Ionicons name="play" size={20} color="#FFFFFF" />
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : item.videoUrl ? (
+                // ── Video: show generated thumbnail or placeholder ────────────
                 <TouchableOpacity
-                  style={styles.playOverlay}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handlePlayVideo(item);
-                  }}
+                  style={styles.thumbnailContainer}
+                  onPress={() => handlePlayVideo(item)}
+                  activeOpacity={0.8}
                 >
-                  <LinearGradient
-                    colors={isDark ? [colors.primary, colors.primaryDark] : [colors.primaryLight, colors.primary]}
-                    style={styles.playButtonGradient}
-                  >
-                    <Ionicons name="play" size={20} color="#FFFFFF" />
-                  </LinearGradient>
+                  {thumbnailUri ? (
+                    <>
+                      <Image
+                        source={{ uri: thumbnailUri }}
+                        style={styles.thumbnail}
+                        resizeMode="cover"
+                      />
+                      <View style={styles.playOverlay}>
+                        <LinearGradient
+                          colors={
+                            isDark
+                              ? [colors.primary, colors.primaryDark]
+                              : [colors.primaryLight, colors.primary]
+                          }
+                          style={styles.playButtonGradient}
+                        >
+                          <Ionicons name="play" size={20} color="#FFFFFF" />
+                        </LinearGradient>
+                      </View>
+                    </>
+                  ) : (
+                    // Shown while thumbnail is still generating in the background
+                    <LinearGradient
+                      colors={
+                        isDark
+                          ? [colors.primaryDark, colors.primary, colors.primaryLight + '80']
+                          : [colors.primary, colors.primaryDark, colors.primaryDark]
+                      }
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.videoGradient}
+                    >
+                      <View style={styles.playIconContainer}>
+                        <Ionicons name="play" size={24} color="#FFFFFF" />
+                      </View>
+                      <Text style={styles.videoText}>Tap to Play</Text>
+                    </LinearGradient>
+                  )}
                 </TouchableOpacity>
+              ) : (
+                // ── No image, no video — category icon placeholder ────────────
+                <LinearGradient
+                  colors={
+                    isDark
+                      ? [colors.primary + '25', colors.primaryDark + '15']
+                      : [colors.primary + '15', colors.primaryLight + '10']
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.thumbnailPlaceholder}
+                >
+                  <Ionicons name={getCategoryIcon(item.category)} size={32} color={colors.primary} />
+                </LinearGradient>
               )}
-            </View>
-          ) : item.videoUrl ? (
-            <TouchableOpacity
-              style={styles.videoPlaceholder}
-              onPress={(e) => {
-                e.stopPropagation();
-                handlePlayVideo(item);
-              }}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={isDark ? [colors.primaryDark, colors.primary, colors.primaryLight + '80'] : [colors.primary, colors.primaryDark, colors.primaryDark]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.videoGradient}
-              >
-                <View style={styles.playIconContainer}>
-                  <Ionicons name="play" size={24} color="#FFFFFF" />
-                </View>
-                <Text style={styles.videoText}>Tap to Play</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          ) : (
-            <LinearGradient
-              colors={isDark ? [colors.primary + '25', colors.primaryDark + '15'] : [colors.primary + '15', colors.primaryLight + '10']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.thumbnailPlaceholder}
-            >
-              <Ionicons
-                name={getCategoryIcon(item.category)}
-                size={32}
-                color={colors.primary}
-              />
-            </LinearGradient>
-          )}
-          <View style={[styles.cardInfo, { backgroundColor: colors.card }]}>
-            <Text style={[styles.exerciseName, { color: colors.text, letterSpacing: -0.3, textAlign: 'center' }]} numberOfLines={1}>{item.name}</Text>
-            <View style={styles.cardMeta}>
-              <View style={styles.metaItem}>
-                <Ionicons name="pricetag" size={12} color={colors.textSecondary} />
-                <Text style={[styles.metaText, { color: colors.textSecondary }]}>{item.category || 'Exercise'}</Text>
-              </View>
-              {item.duration && (
-                <View style={styles.metaItem}>
-                  <Ionicons name="time" size={12} color={colors.textSecondary} />
-                  <Text style={[styles.metaText, { color: colors.textSecondary }]}>{item.duration} min</Text>
-                </View>
-              )}
-            </View>
-            {item.difficulty && (
-              <LinearGradient
-                colors={isDark
-                  ? [getDifficultyColor(item.difficulty, colors), getDifficultyColor(item.difficulty, colors) + 'AA']
-                  : [getDifficultyColor(item.difficulty, colors), getDifficultyColor(item.difficulty, colors) + 'CC']
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.difficultyBadge}
-              >
-                <Text style={styles.difficultyText}>
-                  {item.difficulty.charAt(0).toUpperCase() + item.difficulty.slice(1)}
+
+              <View style={[styles.cardInfo, { backgroundColor: colors.card }]}>
+                <Text
+                  style={[styles.exerciseName, { color: colors.text, letterSpacing: -0.3, textAlign: 'center' }]}
+                  numberOfLines={1}
+                >
+                  {item.name}
                 </Text>
-              </LinearGradient>
-            )}
-          </View>
+                <View style={styles.cardMeta}>
+                  <View style={styles.metaItem}>
+                    <Ionicons name="pricetag" size={12} color={colors.textSecondary} />
+                    <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+                      {item.category || 'Exercise'}
+                    </Text>
+                  </View>
+                  {item.duration && (
+                    <View style={styles.metaItem}>
+                      <Ionicons name="time" size={12} color={colors.textSecondary} />
+                      <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+                        {item.duration} min
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                {item.difficulty && (
+                  <LinearGradient
+                    colors={
+                      isDark
+                        ? [
+                            getDifficultyColor(item.difficulty, colors),
+                            getDifficultyColor(item.difficulty, colors) + 'AA',
+                          ]
+                        : [
+                            getDifficultyColor(item.difficulty, colors),
+                            getDifficultyColor(item.difficulty, colors) + 'CC',
+                          ]
+                    }
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.difficultyBadge}
+                  >
+                    <Text style={styles.difficultyText}>
+                      {item.difficulty.charAt(0).toUpperCase() + item.difficulty.slice(1)}
+                    </Text>
+                  </LinearGradient>
+                )}
+              </View>
+            </View>
+          </LinearGradient>
         </View>
-      </LinearGradient>
-    </View>
+      );
+    },
+    // videoThumbnails is the only runtime dep — colors/isDark are stable references
+    [videoThumbnails, colors, isDark, cardGradientColors, handlePlayVideo]
   );
 
-  if (loading) {
-    return <Loading />;
-  }
+  // ── Stable key extractor ────────────────────────────────────────────────────
+  const keyExtractor = useCallback((item) => item._id || item.id, []);
+
+  if (loading) return <Loading />;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+    >
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
-      {/* Video Player Modal */}
       {selectedVideo && (
         <VideoPlayerModal
           visible={!!selectedVideo}
@@ -300,7 +438,6 @@ const ExerciseLibraryScreen = () => {
         end={{ x: 1, y: 1 }}
         style={[styles.headerGradient, { paddingTop: insets.top + 10 }]}
       >
-        {/* Decorative circles */}
         <View style={styles.headerCircle1} />
         <View style={styles.headerCircle2} />
         <View style={styles.headerTop}>
@@ -309,11 +446,8 @@ const ExerciseLibraryScreen = () => {
             <Text style={styles.headerTitle}>Exercise Library</Text>
             <Text style={styles.headerSubtitle}>{items.length} exercises available</Text>
           </View>
-          {/* Changed this View to act as a spacer to keep the title perfectly centered */}
           <View style={{ width: 40 }} />
         </View>
-
-        {/* Search Bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={20} color={colors.textSecondary} />
@@ -333,12 +467,18 @@ const ExerciseLibraryScreen = () => {
         </View>
       </LinearGradient>
 
-
       {/* Muscle Group Filter */}
-      <View style={[styles.muscleGroupContainer, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+      <View
+        style={[
+          styles.muscleGroupContainer,
+          { backgroundColor: colors.background, borderBottomColor: colors.border },
+        ]}
+      >
         <View style={styles.muscleGroupHeader}>
           <Ionicons name="body-outline" size={14} color={colors.textSecondary} />
-          <Text style={[styles.muscleGroupLabel, { color: colors.textSecondary }]}>Muscle Groups</Text>
+          <Text style={[styles.muscleGroupLabel, { color: colors.textSecondary }]}>
+            Muscle Groups
+          </Text>
         </View>
         <FlatList
           horizontal
@@ -351,7 +491,10 @@ const ExerciseLibraryScreen = () => {
               style={[
                 styles.muscleGroupChip,
                 { backgroundColor: colors.primary + '10', borderColor: colors.primary + '25' },
-                selectedMuscleGroup === item.key && { backgroundColor: colors.primary, borderColor: colors.primary }
+                selectedMuscleGroup === item.key && {
+                  backgroundColor: colors.primary,
+                  borderColor: colors.primary,
+                },
               ]}
               onPress={() => setSelectedMuscleGroup(item.key)}
               activeOpacity={0.7}
@@ -361,11 +504,13 @@ const ExerciseLibraryScreen = () => {
                 size={14}
                 color={selectedMuscleGroup === item.key ? '#FFFFFF' : colors.primary}
               />
-              <Text style={[
-                styles.muscleGroupText,
-                { color: colors.primary },
-                selectedMuscleGroup === item.key && { color: '#FFFFFF' }
-              ]}>
+              <Text
+                style={[
+                  styles.muscleGroupText,
+                  { color: colors.primary },
+                  selectedMuscleGroup === item.key && { color: '#FFFFFF' },
+                ]}
+              >
                 {item.label}
               </Text>
             </TouchableOpacity>
@@ -377,7 +522,7 @@ const ExerciseLibraryScreen = () => {
       <FlatList
         data={filteredItems}
         renderItem={renderItem}
-        keyExtractor={(item) => item._id || item.id}
+        keyExtractor={keyExtractor}
         numColumns={2}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.listContent}
@@ -404,10 +549,19 @@ const ExerciseLibraryScreen = () => {
           </View>
         }
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        // Perf: avoid anonymous functions as props
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={8}
+        windowSize={5}
+        initialNumToRender={6}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 };
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
@@ -487,8 +641,6 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.md,
     padding: 0,
   },
-
-  // Muscle Group Filter styles
   muscleGroupContainer: {
     paddingTop: theme.spacing[2],
     paddingBottom: theme.spacing[3],
@@ -564,10 +716,6 @@ const styles = StyleSheet.create({
     height: 130,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  videoPlaceholder: {
-    width: '100%',
-    height: 130,
   },
   videoGradient: {
     flex: 1,
@@ -663,7 +811,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     opacity: 0.8,
   },
-  // Thumbnail container with play overlay
   thumbnailContainer: {
     position: 'relative',
     width: '100%',
@@ -679,14 +826,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.3)',
   },
-  playButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...theme.shadows.md,
-  },
   playButtonGradient: {
     width: 36,
     height: 36,
@@ -695,7 +834,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...theme.shadows.md,
   },
-  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.9)',
@@ -737,7 +875,7 @@ const styles = StyleSheet.create({
   },
   videoContainer: {
     width: SCREEN_WIDTH,
-    height: SCREEN_WIDTH * 0.75, // 4:3 aspect ratio
+    height: SCREEN_WIDTH * 0.75,
     backgroundColor: '#000',
   },
   videoPlayer: {

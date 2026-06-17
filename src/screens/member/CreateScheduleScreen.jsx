@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Modal, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -9,7 +9,6 @@ import { scheduleAPI } from '../../api/schedule.api';
 import { exerciseAPI } from '../../api/exercise.api';
 
 const SCHEDULE_TYPES = ['1-day', '2-day', '3-day'];
-const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 const DIFFICULTY_OPTIONS = ['beginner', 'intermediate', 'advanced'];
 const GOAL_OPTIONS = ['Weight Loss', 'Muscle Building', 'Strength Training', 'Cardio Fitness', 'Flexibility', 'Endurance'];
 
@@ -25,8 +24,8 @@ const CreateScheduleScreen = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [exercises, setExercises] = useState([]); // Structure: { exerciseId, exerciseName, scheduleDay, setReps: [{sets, reps}], duration, restTime, notes, dayOfWeek }
-  const [selectedDay, setSelectedDay] = useState(1); // For multi-day schedules
+  const [exercises, setExercises] = useState([]);
+  const [selectedDay, setSelectedDay] = useState(1);
   const [saving, setSaving] = useState(false);
 
   const [showExerciseModal, setShowExerciseModal] = useState(false);
@@ -59,7 +58,6 @@ const CreateScheduleScreen = () => {
     return name.trim().length > 0 && exercises.length > 0 && !saving;
   }, [name, exercises, saving]);
 
-  // Filter exercises by selected day for multi-day schedules
   const exercisesForSelectedDay = useMemo(() => {
     if (scheduleType === '1-day') return exercises;
     return exercises.filter(ex => ex.scheduleDay === selectedDay);
@@ -73,12 +71,11 @@ const CreateScheduleScreen = () => {
     const newExercise = {
       exerciseId: exercise._id,
       exerciseName: exercise.name,
-      scheduleDay: scheduleType === '1-day' ? undefined : selectedDay,
-      setReps: [{ sets: '', reps: '' }], // Start with one set-rep combination
+      scheduleDay: scheduleType === '1-day' ? 1 : selectedDay,
+      setReps: [{ sets: '', reps: '' }],
       duration: '',
       restTime: '',
       notes: '',
-      dayOfWeek: scheduleType === '1-day' ? '' : undefined, // Only for 1-day schedules
     };
     setExercises(prev => [...prev, newExercise]);
     setShowExerciseModal(false);
@@ -90,7 +87,6 @@ const CreateScheduleScreen = () => {
       if (scheduleType === '1-day') {
         return i !== index;
       }
-      // For multi-day, find by exerciseId and scheduleDay
       return !(ex.exerciseId === exerciseToRemove.exerciseId && ex.scheduleDay === exerciseToRemove.scheduleDay);
     }));
   };
@@ -101,7 +97,6 @@ const CreateScheduleScreen = () => {
       if (scheduleType === '1-day') {
         return i === index ? { ...ex, [field]: value } : ex;
       }
-      // For multi-day, match by exerciseId and scheduleDay
       if (ex.exerciseId === exerciseToUpdate.exerciseId && ex.scheduleDay === exerciseToUpdate.scheduleDay) {
         return { ...ex, [field]: value };
       }
@@ -113,7 +108,6 @@ const CreateScheduleScreen = () => {
     const exerciseToUpdate = exercisesForSelectedDay[index];
     setExercises(prev => prev.map((ex, i) => {
       if (scheduleType === '1-day') {
-        // For 1-day schedules, exercisesForSelectedDay === exercises, so index matches
         if (i === index) {
           return { ...ex, setReps: [...(ex.setReps || []), { sets: '', reps: '' }] };
         }
@@ -130,7 +124,6 @@ const CreateScheduleScreen = () => {
     const exerciseToUpdate = exercisesForSelectedDay[exerciseIndex];
     setExercises(prev => prev.map((ex, i) => {
       if (scheduleType === '1-day') {
-        // For 1-day schedules, exercisesForSelectedDay === exercises, so index matches
         if (i === exerciseIndex && ex.setReps && ex.setReps.length > 1) {
           return { ...ex, setReps: ex.setReps.filter((_, idx) => idx !== setRepIndex) };
         }
@@ -149,7 +142,6 @@ const CreateScheduleScreen = () => {
     const exerciseToUpdate = exercisesForSelectedDay[exerciseIndex];
     setExercises(prev => prev.map((ex, i) => {
       if (scheduleType === '1-day') {
-        // For 1-day schedules, exercisesForSelectedDay === exercises, so index matches
         if (i === exerciseIndex && ex.setReps) {
           const updatedSetReps = [...ex.setReps];
           updatedSetReps[setRepIndex] = { ...updatedSetReps[setRepIndex], [field]: value };
@@ -168,80 +160,134 @@ const CreateScheduleScreen = () => {
     }));
   };
 
-  // When schedule type changes, update exercises
   useEffect(() => {
     if (scheduleType === '1-day') {
-      // Convert scheduleDay to dayOfWeek for 1-day schedules
-      setExercises(prev => prev.map(ex => ({
-        ...ex,
-        scheduleDay: undefined,
-        dayOfWeek: ex.dayOfWeek || ''
-      })));
-      setSelectedDay(1);
+      setExercises(prev => prev.map(ex => ({ ...ex, scheduleDay: 1 })));
     } else {
-      // Convert dayOfWeek to scheduleDay for multi-day schedules
       const numDays = scheduleType === '2-day' ? 2 : 3;
       setExercises(prev => prev.map((ex, idx) => ({
         ...ex,
-        scheduleDay: ex.scheduleDay || ((idx % numDays) + 1),
-        dayOfWeek: undefined
+        scheduleDay: ex.scheduleDay && ex.scheduleDay <= numDays ? ex.scheduleDay : ((idx % numDays) + 1),
       })));
-      setSelectedDay(1);
     }
+    setSelectedDay(1);
   }, [scheduleType]);
+
+  // Helper: safely parse a date string, returns ISO string or undefined
+  const parseDateSafe = (dateStr) => {
+    if (!dateStr || typeof dateStr !== 'string' || dateStr.trim() === '') return undefined;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return undefined;
+    return d.toISOString();
+  };
 
   const onSave = async () => {
     try {
       setSaving(true);
+
+      // Build and filter exercises — only include those with at least one valid set+rep pair
+      const mappedExercises = exercises.map(ex => {
+        const exerciseData = {
+          exerciseId: ex.exerciseId,
+          scheduleDay: ex.scheduleDay || 1,
+        };
+
+        // Only include duration if it's a valid positive integer
+        if (ex.duration && ex.duration.toString().trim() !== '') {
+          const dur = parseInt(ex.duration, 10);
+          if (!isNaN(dur) && dur > 0) exerciseData.duration = dur;
+        }
+
+        // Only include restTime if it's a valid positive integer
+        if (ex.restTime && ex.restTime.toString().trim() !== '') {
+          const rest = parseInt(ex.restTime, 10);
+          if (!isNaN(rest) && rest > 0) exerciseData.restTime = rest;
+        }
+
+        // Only include notes if non-empty
+        const trimmedNotes = (ex.notes || '').trim();
+        if (trimmedNotes) exerciseData.notes = trimmedNotes;
+
+        // Build valid set-rep pairs
+        if (ex.setReps && ex.setReps.length > 0) {
+          const validSetReps = ex.setReps
+            .filter(sr => sr.sets !== '' && sr.reps !== '' && sr.sets != null && sr.reps != null)
+            .map(sr => ({
+              sets: parseInt(sr.sets, 10),
+              reps: parseInt(sr.reps, 10),
+            }))
+            .filter(sr => !isNaN(sr.sets) && !isNaN(sr.reps) && sr.sets > 0 && sr.reps > 0);
+
+          if (validSetReps.length > 0) {
+            exerciseData.setReps = validSetReps;
+          }
+        }
+
+        return exerciseData;
+      }).filter(ex => ex.setReps && ex.setReps.length > 0); // drop exercises with no valid set-reps
+
+      // Front-end validation before hitting the API
+      if (mappedExercises.length === 0) {
+        Alert.alert(
+          'Validation Error',
+          'Please add at least one exercise with valid sets and reps (both must be numbers greater than 0).'
+        );
+        return;
+      }
+
       const payload = {
         name: name.trim(),
-        description: description.trim() || undefined,
-        scheduleType: scheduleType,
-        difficulty: difficulty || undefined,
-        goals: goals.length > 0 ? goals : undefined,
-        startDate: startDate ? new Date(startDate).toISOString() : undefined,
-        endDate: endDate ? new Date(endDate).toISOString() : undefined,
-        notes: notes.trim() || undefined,
-        exercises: exercises.map(ex => {
-          const exerciseData = {
-            exerciseId: ex.exerciseId,
-            duration: ex.duration ? parseInt(ex.duration) : undefined,
-            restTime: ex.restTime ? parseInt(ex.restTime) : undefined,
-            notes: ex.notes.trim() || undefined,
-          };
-
-          // Add setReps array if it exists and has valid entries
-          if (ex.setReps && ex.setReps.length > 0) {
-            const validSetReps = ex.setReps
-              .filter(sr => sr.sets && sr.reps && sr.sets !== '' && sr.reps !== '')
-              .map(sr => ({
-                sets: parseInt(sr.sets),
-                reps: parseInt(sr.reps)
-              }));
-            if (validSetReps.length > 0) {
-              exerciseData.setReps = validSetReps;
-            }
-          }
-
-          // Add scheduleDay for multi-day schedules
-          if (scheduleType !== '1-day' && ex.scheduleDay) {
-            exerciseData.scheduleDay = ex.scheduleDay;
-          }
-
-          // Add dayOfWeek for 1-day schedules
-          if (scheduleType === '1-day' && ex.dayOfWeek) {
-            exerciseData.dayOfWeek = ex.dayOfWeek;
-          }
-
-          return exerciseData;
-        }).filter(ex => ex.setReps && ex.setReps.length > 0), // Only include exercises with valid set-rep combinations
+        scheduleType,
+        exercises: mappedExercises,
       };
-      await scheduleAPI.createSchedule(payload);
+
+      // Optional fields — only include if they have real values
+      const trimmedDescription = description.trim();
+      if (trimmedDescription) payload.description = trimmedDescription;
+
+      if (difficulty) payload.difficulty = difficulty;
+
+      if (goals.length > 0) payload.goals = goals;
+
+      const parsedStart = parseDateSafe(startDate);
+      if (parsedStart) payload.startDate = parsedStart;
+
+      const parsedEnd = parseDateSafe(endDate);
+      if (parsedEnd) payload.endDate = parsedEnd;
+
+      const trimmedNotes = notes.trim();
+      if (trimmedNotes) payload.notes = trimmedNotes;
+
+      const res = await scheduleAPI.createSchedule(payload);
+
+      // Catch cases where the API wrapper resolves instead of throwing on 4xx
+      const statusCode = res?.status ?? res?.data?.statusCode;
+      const isFail = res?.data?.status === 'fail' || res?.data?.status === 'error' || (statusCode && statusCode >= 400);
+      if (isFail) {
+        const msg = res?.data?.message || res?.data?.error || 'Failed to create schedule';
+        throw new Error(msg);
+      }
+
+      const scheduleId = res?.data?.schedule?._id || res?.data?._id;
       Alert.alert('Success', 'Schedule created successfully', [
-        { text: 'OK', onPress: () => navigation.goBack() }
+        {
+          text: 'OK',
+          onPress: () => {
+            if (scheduleId) {
+              navigation.replace('ScheduleDetail', { id: scheduleId, refreshCount: Date.now() });
+            } else {
+              navigation.goBack();
+            }
+          },
+        },
       ]);
     } catch (e) {
-      Alert.alert('Error', e?.response?.data?.message || 'Failed to create schedule');
+      const errorMessage =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        e?.message ||
+        'Failed to create schedule';
+      Alert.alert('Error', errorMessage);
     } finally {
       setSaving(false);
     }
@@ -325,34 +371,6 @@ const CreateScheduleScreen = () => {
             />
           </View>
         </View>
-        {scheduleType === '1-day' && (
-          <View style={styles.fieldRow}>
-            <View style={[styles.field, { flex: 1 }]}>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Day of Week</Text>
-              <View style={styles.daySelector}>
-                {DAYS.map(day => (
-                  <TouchableOpacity
-                    key={day}
-                    style={[
-                      styles.dayButton,
-                      { backgroundColor: colors.backgroundSecondary },
-                      item.dayOfWeek === day && [styles.dayButtonActive, { backgroundColor: colors.primary }]
-                    ]}
-                    onPress={() => updateExercise(index, 'dayOfWeek', item.dayOfWeek === day ? '' : day)}
-                  >
-                    <Text style={[
-                      styles.dayButtonText,
-                      { color: colors.textSecondary },
-                      item.dayOfWeek === day && [styles.dayButtonTextActive, { color: colors.white }]
-                    ]}>
-                      {day.charAt(0).toUpperCase() + day.slice(1, 3)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-        )}
         <View style={styles.field}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Notes</Text>
           <TextInput
@@ -369,7 +387,17 @@ const CreateScheduleScreen = () => {
   );
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+    >
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+      >
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Create Training Schedule</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Build your personalized workout plan</Text>
@@ -568,13 +596,18 @@ const CreateScheduleScreen = () => {
         <Text style={[styles.saveButtonText, { color: colors.white }]}>{saving ? 'Creating...' : 'Create Schedule'}</Text>
       </TouchableOpacity>
 
+      {/* Exercise Picker Modal */}
       <Modal
         visible={showExerciseModal}
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={() => setShowExerciseModal(false)}
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <KeyboardAvoidingView
+          style={[styles.modalContainer, { backgroundColor: colors.background }]}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+        >
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Select Exercise</Text>
             <TouchableOpacity onPress={() => setShowExerciseModal(false)}>
@@ -612,6 +645,7 @@ const CreateScheduleScreen = () => {
                 item.category?.toLowerCase().includes(searchQuery.toLowerCase())
               )}
               keyExtractor={(item) => item._id}
+              keyboardShouldPersistTaps="handled"
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[styles.exerciseListItem, { borderBottomColor: colors.border }]}
@@ -621,12 +655,13 @@ const CreateScheduleScreen = () => {
                   <Text style={[styles.exerciseListItemMeta, { color: colors.textSecondary }]}>{item.category} · {item.difficulty}</Text>
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No exercises found</Text>}
+              ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary, padding: theme.spacing.lg }]}>No exercises found</Text>}
             />
           )}
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
+      {/* Start Date Modal */}
       <Modal
         visible={showStartDateModal}
         animationType="slide"
@@ -673,6 +708,7 @@ const CreateScheduleScreen = () => {
         </View>
       </Modal>
 
+      {/* End Date Modal */}
       <Modal
         visible={showEndDateModal}
         animationType="slide"
@@ -718,7 +754,8 @@ const CreateScheduleScreen = () => {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -759,11 +796,6 @@ const styles = StyleSheet.create({
   field: { flex: 1 },
   fieldLabel: { fontSize: theme.typography.fontSize.xs, marginBottom: theme.spacing.xs },
   fieldInput: { borderRadius: theme.borderRadius.md, padding: theme.spacing.sm, fontSize: theme.typography.fontSize.sm },
-  daySelector: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.xs },
-  dayButton: { paddingVertical: theme.spacing.xs, paddingHorizontal: theme.spacing.sm, borderRadius: theme.borderRadius.md },
-  dayButtonActive: {},
-  dayButtonText: { fontSize: theme.typography.fontSize.xs },
-  dayButtonTextActive: { fontWeight: theme.typography.fontWeight.semibold },
   dayTabs: { flexDirection: 'row', gap: theme.spacing.sm, marginBottom: theme.spacing.md },
   dayTab: { flex: 1, paddingVertical: theme.spacing.sm, paddingHorizontal: theme.spacing.md, borderRadius: theme.borderRadius.lg, alignItems: 'center' },
   dayTabActive: {},
@@ -793,25 +825,9 @@ const styles = StyleSheet.create({
   calendarModalContent: { borderRadius: theme.borderRadius.xl, padding: theme.spacing.lg, width: '90%', maxWidth: 400, ...theme.shadows.heavy },
   calendarModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.md },
   calendarModalTitle: { fontSize: theme.typography.fontSize.xl, fontWeight: theme.typography.fontWeight.bold },
-  searchContainer: {
-    padding: theme.spacing.md,
-    borderBottomWidth: 1,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: theme.borderRadius.lg,
-    paddingHorizontal: theme.spacing.md,
-    height: 44,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: theme.spacing.sm,
-    fontSize: theme.typography.fontSize.md,
-  },
+  searchContainer: { padding: theme.spacing.md, borderBottomWidth: 1 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: theme.borderRadius.lg, paddingHorizontal: theme.spacing.md, height: 44 },
+  searchInput: { flex: 1, marginLeft: theme.spacing.sm, fontSize: theme.typography.fontSize.md },
 });
 
 export default CreateScheduleScreen;
-
-
-

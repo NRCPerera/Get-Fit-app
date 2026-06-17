@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,13 @@ import {
   Alert,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 // Static theme for LAYOUT only (spacing, borderRadius, typography sizes)
 import { theme } from '../../styles/theme';
 // Dynamic theme for COLORS (responds to light/dark mode)
 import { useTheme } from '../../context/ThemeContext';
-import { loginUser } from '../../store/slices/authSlice';
+import { clearError, loginUser } from '../../store/slices/authSlice';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Card from '../../components/common/Card';
@@ -32,6 +32,13 @@ const LoginScreen = () => {
   // Get dynamic theme colors - this responds to light/dark mode changes
   const { theme: dynamicTheme } = useTheme();
   const colors = dynamicTheme.colors;
+  const authErrorMessage = typeof error === 'string' ? error : error?.message || '';
+
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(clearError());
+    }, [dispatch])
+  );
 
   const formatTimeRemaining = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -50,6 +57,7 @@ const LoginScreen = () => {
 
     setLoading(true);
     try {
+      dispatch(clearError());
       await dispatch(loginUser({ email, password })).unwrap();
     } catch (error) {
       if (error?.isRateLimited) {
@@ -89,22 +97,32 @@ const LoginScreen = () => {
             label="Email Address"
             placeholder="Enter your email"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(value) => {
+              if (authErrorMessage) {
+                dispatch(clearError());
+              }
+              setEmail(value);
+            }}
             keyboardType="email-address"
             autoCapitalize="none"
             leftIcon="mail-outline"
-            error={error && typeof error === 'string' && error.includes('email') ? error : ''}
+            error={authErrorMessage.toLowerCase().includes('email') ? authErrorMessage : ''}
           />
 
           <Input
             label="Password"
             placeholder="Enter your password"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(value) => {
+              if (authErrorMessage) {
+                dispatch(clearError());
+              }
+              setPassword(value);
+            }}
             secureTextEntry
             showPasswordToggle
             leftIcon="lock-closed-outline"
-            error={error && typeof error === 'string' && error.includes('password') ? error : ''}
+            error={authErrorMessage.toLowerCase().includes('password') ? authErrorMessage : ''}
           />
 
           <TouchableOpacity

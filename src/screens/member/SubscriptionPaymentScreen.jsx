@@ -104,7 +104,7 @@ const SubscriptionPaymentScreen = () => {
         );
 
         // Check for success - includes "Already subscribed" as success
-        if (subscribeRes?.success || subscribeRes?.data?.subscription) {
+        if (subscribeRes?.success || subscribeRes?.data?.assignment || subscribeRes?.data?.subscription) {
           subscriptionActive = true;
         }
       }

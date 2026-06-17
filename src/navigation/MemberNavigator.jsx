@@ -28,6 +28,7 @@ import NutritionDetailScreen from '../screens/member/NutritionDetailScreen';
 import CreateNutritionPlanScreen from '../screens/instructor/CreateNutritionPlanScreen';
 import MedicalFormScreen from '../screens/member/MedicalFormScreen';
 import EditProfileScreen from '../screens/member/EditProfileScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import NotificationsScreen from '../screens/member/NotificationsScreen';
 import ProgressTrackingScreen from '../screens/member/ProgressTrackingScreen';
 import AddMeasurementScreen from '../screens/member/AddMeasurementScreen';
@@ -180,6 +181,11 @@ const ProfileStack = () => (
     <Stack.Screen
       name="EditProfile"
       component={EditProfileScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="ForgotPassword"
+      component={ForgotPasswordScreen}
       options={{ headerShown: false }}
     />
     <Stack.Screen

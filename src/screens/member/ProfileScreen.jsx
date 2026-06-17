@@ -5,8 +5,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../../styles/theme'; // Static theme for StyleSheet
 import { useTheme } from '../../context/ThemeContext'; // Dynamic theme for component
-import { userAPI } from '../../api/user.api';
 import { scheduleAPI } from '../../api/schedule.api';
+import { fetchUserProfile } from '../../store/slices/userSlice';
 import { logoutUser } from '../../store/slices/authSlice';
 import Loading from '../../components/common/Loading';
 import EmptyState from '../../components/common/EmptyState';
@@ -20,10 +20,10 @@ const ProfileScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const { user: authUser, loading: authLoading } = useSelector((s) => s.auth);
+  const { profile } = useSelector((s) => s.user);
   const { isDark, theme: dynamicTheme } = useTheme(); // Get dynamic theme for colors
   const colors = dynamicTheme.colors; // Use dynamic colors
 
-  const [profile, setProfile] = useState(null);
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,21 +32,13 @@ const ProfileScreen = () => {
   const load = useCallback(async () => {
     try {
       setError('');
-      // Load profile and schedules in parallel
-      const [profileRes, schedulesRes] = await Promise.all([
-        userAPI.getProfile().catch(err => {
-          return null;
-        }),
-        scheduleAPI.getMySchedules().catch(err => {
-          return { data: { items: [] } };
-        })
-      ]);
+      // Fetch profile from Redux and schedules from API
+      const schedulesRes = await scheduleAPI.getMySchedules().catch(err => {
+        return { data: { items: [] } };
+      });
 
-      // Set profile data
-      if (profileRes) {
-        const profileData = profileRes?.data?.user || profileRes?.data || profileRes?.user || profileRes;
-        setProfile(profileData);
-      }
+      // Dispatch profile fetch to refresh from Redux
+      await dispatch(fetchUserProfile());
 
       // Set schedules data
       const schedulesData = schedulesRes?.data?.items || schedulesRes?.items || [];
@@ -57,7 +49,7 @@ const ProfileScreen = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => { load(); }, [load]);
 

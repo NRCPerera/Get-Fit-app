@@ -157,10 +157,6 @@ const InstructorDashboardScreen = () => {
     }).format(amount || 0);
   };
 
-  const formatRating = (rating) => {
-    return rating ? rating.toFixed(1) : '0.0';
-  };
-
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
@@ -225,12 +221,6 @@ const InstructorDashboardScreen = () => {
           value={schedules.length}
           color={colors.secondary}
           onPress={() => navigation.navigate('Schedules', { screen: 'InstructorSchedules' })}
-        />
-        <StatCard
-          icon="star"
-          label="Rating"
-          value={formatRating(stats.avgRating)}
-          color={colors.warning}
         />
         <StatCard
           icon="cash"

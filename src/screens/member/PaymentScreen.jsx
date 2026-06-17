@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking, AppState, StatusBar, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking, AppState, StatusBar, Platform, KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -161,100 +161,111 @@ const PaymentScreen = () => {
         </View>
       </LinearGradient>
 
-      <ScrollView
-        style={styles.scrollContent}
-        contentContainerStyle={styles.scrollInner}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
       >
-        {/* Quick Amount Selection */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Select Amount</Text>
-          <View style={styles.quickAmounts}>
-            {quickAmounts.map((amt) => (
-              <TouchableOpacity
-                key={amt}
-                style={[
-                  styles.quickAmountBtn,
-                  { backgroundColor: colors.white },
-                  amount === String(amt) && styles.quickAmountBtnActive
-                ]}
-                onPress={() => setAmount(String(amt))}
-                activeOpacity={0.7}
-              >
-                <Text style={[
-                  styles.quickAmountText,
-                  { color: colors.text },
-                  amount === String(amt) && styles.quickAmountTextActive
-                ]}>
-                  LKR {amt.toLocaleString()}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Form */}
-        <View style={[styles.formCard, { backgroundColor: colors.white }]}>
-          <Input
-            label="Amount (LKR)"
-            placeholder="Enter amount"
-            value={amount}
-            onChangeText={setAmount}
-            keyboardType="decimal-pad"
-            leftIcon="cash-outline"
-          />
-
-          <Input
-            label="Purpose"
-            placeholder="e.g. Membership, Training"
-            value={purpose}
-            onChangeText={setPurpose}
-            leftIcon="document-text-outline"
-          />
-
-          <View style={styles.infoBox}>
-            <View style={styles.infoIconContainer}>
-              <Ionicons name="information-circle" size={20} color="#DC2626" />
-            </View>
-            <Text style={[styles.infoText, { color: colors.text }]}>
-              You will be redirected to PayHere's secure payment page to complete your transaction.
-            </Text>
-          </View>
-
-          {/* Security Features */}
-          <View style={[styles.securityFeatures, { borderTopColor: colors.border }]}>
-            <View style={styles.securityItem}>
-              <Ionicons name="lock-closed" size={16} color={colors.success} />
-              <Text style={[styles.securityText, { color: colors.textSecondary }]}>256-bit SSL</Text>
-            </View>
-            <View style={styles.securityItem}>
-              <Ionicons name="shield-checkmark" size={16} color={colors.success} />
-              <Text style={[styles.securityText, { color: colors.textSecondary }]}>PCI Compliant</Text>
-            </View>
-            <View style={styles.securityItem}>
-              <Ionicons name="card" size={16} color={colors.success} />
-              <Text style={[styles.securityText, { color: colors.textSecondary }]}>Visa/Master</Text>
+        <ScrollView
+          style={styles.scrollContent}
+          contentContainerStyle={[styles.scrollInner, { paddingBottom: Math.max(insets.bottom + theme.spacing[8], theme.spacing[8]) }]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Quick Amount Selection */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Select Amount</Text>
+            <View style={styles.quickAmounts}>
+              {quickAmounts.map((amt) => (
+                <TouchableOpacity
+                  key={amt}
+                  style={[
+                    styles.quickAmountBtn,
+                    { backgroundColor: colors.white },
+                    amount === String(amt) && styles.quickAmountBtnActive
+                  ]}
+                  onPress={() => setAmount(String(amt))}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.quickAmountText,
+                    { color: colors.text },
+                    amount === String(amt) && styles.quickAmountTextActive
+                  ]}>
+                    LKR {amt.toLocaleString()}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
-          <Button
-            title={processing ? "Processing..." : "Proceed to Payment"}
-            onPress={createIntent}
-            disabled={!canPay || processing}
-            loading={loading}
-            fullWidth
-            icon="lock-closed"
-            size="lg"
-            style={styles.submitButton}
-          />
-        </View>
-      </ScrollView>
+          {/* Form */}
+          <View style={[styles.formCard, { backgroundColor: colors.white }]}>
+            <Input
+              label="Amount (LKR)"
+              placeholder="Enter amount"
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="decimal-pad"
+              leftIcon="cash-outline"
+            />
+
+            <Input
+              label="Purpose"
+              placeholder="e.g. Membership, Training"
+              value={purpose}
+              onChangeText={setPurpose}
+              leftIcon="document-text-outline"
+            />
+
+            <View style={styles.infoBox}>
+              <View style={styles.infoIconContainer}>
+                <Ionicons name="information-circle" size={20} color="#DC2626" />
+              </View>
+              <Text style={[styles.infoText, { color: colors.text }]}>
+                You will be redirected to PayHere's secure payment page to complete your transaction.
+              </Text>
+            </View>
+
+            {/* Security Features */}
+            <View style={[styles.securityFeatures, { borderTopColor: colors.border }]}>
+              <View style={styles.securityItem}>
+                <Ionicons name="lock-closed" size={16} color={colors.success} />
+                <Text style={[styles.securityText, { color: colors.textSecondary }]}>256-bit SSL</Text>
+              </View>
+              <View style={styles.securityItem}>
+                <Ionicons name="shield-checkmark" size={16} color={colors.success} />
+                <Text style={[styles.securityText, { color: colors.textSecondary }]}>PCI Compliant</Text>
+              </View>
+              <View style={styles.securityItem}>
+                <Ionicons name="card" size={16} color={colors.success} />
+                <Text style={[styles.securityText, { color: colors.textSecondary }]}>Visa/Master</Text>
+              </View>
+            </View>
+
+            <Button
+              title={processing ? "Processing..." : "Proceed to Payment"}
+              onPress={createIntent}
+              disabled={!canPay || processing}
+              loading={loading}
+              fullWidth
+              icon="lock-closed"
+              size="lg"
+              style={styles.submitButton}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  keyboardAvoid: {
     flex: 1,
   },
   headerGradient: {

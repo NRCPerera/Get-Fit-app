@@ -64,20 +64,15 @@ const VerifyEmailScreen = () => {
     }
 
     try {
-      const action = await dispatch(verifyOTP({ email, otp: otpCode }));
-      if (verifyOTP.fulfilled.match(action)) {
-        Alert.alert('Success', 'Email verified successfully!', [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Login')
-          }
-        ]);
-      } else {
-        const errorMsg = action.payload?.message || 'OTP verification failed';
-        Alert.alert('Error', errorMsg);
-      }
+      await dispatch(verifyOTP({ email, otp: otpCode })).unwrap();
+      Alert.alert('Success', 'Email verified successfully!', [
+        {
+          text: 'OK',
+          onPress: () => navigation.navigate('Login')
+        }
+      ]);
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      Alert.alert('Error', error?.message || 'OTP verification failed');
     }
   };
 
@@ -94,18 +89,13 @@ const VerifyEmailScreen = () => {
 
     try {
       setResending(true);
-      const action = await dispatch(resendOTP(email));
-      if (resendOTP.fulfilled.match(action)) {
-        Alert.alert('Success', 'OTP has been resent to your email');
-        setCountdown(60);
-        setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
-      } else {
-        const errorMsg = action.payload?.message || 'Failed to resend OTP';
-        Alert.alert('Error', errorMsg);
-      }
+      await dispatch(resendOTP(email)).unwrap();
+      Alert.alert('Success', 'OTP has been resent to your email');
+      setCountdown(60);
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
+      Alert.alert('Error', error?.message || 'Failed to resend OTP');
     } finally {
       setResending(false);
     }
@@ -113,12 +103,14 @@ const VerifyEmailScreen = () => {
 
   return (
     <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
-      style={screenStyles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+      style={[screenStyles.container, { backgroundColor: colors.background }]}
     >
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>

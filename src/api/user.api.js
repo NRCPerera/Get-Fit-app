@@ -18,6 +18,11 @@ export const userAPI = {
   },
   changePassword: async (data) => {
     const res = await apiClient.post('/users/me/change-password', data);
+    if (res.status >= 400 || res.data?.success === false) {
+      const error = new Error(res.data?.message || res.data?.error || 'Failed to change password');
+      error.response = res;
+      throw error;
+    }
     return res.data;
   },
   deleteAccount: async () => {

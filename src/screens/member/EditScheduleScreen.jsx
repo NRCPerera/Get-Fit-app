@@ -9,8 +9,6 @@ import { scheduleAPI } from '../../api/schedule.api';
 import { exerciseAPI } from '../../api/exercise.api';
 import BackButton from '../../components/common/BackButton';
 
-const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
 const EditScheduleScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -44,24 +42,18 @@ const EditScheduleScreen = () => {
 
   // --- EXERCISE EDITING STATE ---
   const initialExercises = (initialData?.exercises || []).map(ex => {
-      let mappedSetReps = [];
-      if (ex.setReps && ex.setReps.length > 0) {
-          mappedSetReps = ex.setReps.map(sr => ({ sets: String(sr.sets || ''), reps: String(sr.reps || '') }));
-      } else if (ex.sets || ex.reps) {
-          mappedSetReps = [{ sets: String(ex.sets || ''), reps: String(ex.reps || '') }];
-      } else {
-          mappedSetReps = [{ sets: '', reps: '' }];
-      }
+      const mappedSetReps = (ex.setReps && ex.setReps.length > 0)
+        ? ex.setReps.map(sr => ({ sets: String(sr.sets || ''), reps: String(sr.reps || '') }))
+        : [{ sets: '', reps: '' }];
 
       return {
           exerciseId: ex.exerciseId?._id || ex.exerciseId || ex.id,
           exerciseName: ex.exerciseId?.name || ex.exerciseName || 'Exercise',
-          scheduleDay: ex.scheduleDay,
+          scheduleDay: ex.scheduleDay || (scheduleType === '1-day' ? 1 : undefined),
           setReps: mappedSetReps,
           duration: ex.duration ? String(ex.duration) : '',
           restTime: ex.restTime ? String(ex.restTime) : '',
           notes: ex.notes || '',
-          dayOfWeek: ex.dayOfWeek || ''
       };
   });
 
@@ -100,12 +92,11 @@ const EditScheduleScreen = () => {
     const newExercise = {
       exerciseId: exercise._id,
       exerciseName: exercise.name,
-      scheduleDay: scheduleType === '1-day' ? undefined : selectedDay,
-      setReps: [{ sets: '', reps: '' }], // Start with one set-rep combination
+      scheduleDay: scheduleType === '1-day' ? 1 : selectedDay,
+      setReps: [{ sets: '', reps: '' }],
       duration: '',
       restTime: '',
       notes: '',
-      dayOfWeek: scheduleType === '1-day' ? '' : undefined,
     };
     setExercises(prev => [...prev, newExercise]);
     setShowExerciseModal(false);
@@ -215,12 +206,8 @@ const EditScheduleScreen = () => {
             }
           }
 
-          if (scheduleType !== '1-day' && ex.scheduleDay) {
+          if (ex.scheduleDay) {
             exerciseData.scheduleDay = ex.scheduleDay;
-          }
-
-          if (scheduleType === '1-day' && ex.dayOfWeek) {
-            exerciseData.dayOfWeek = ex.dayOfWeek;
           }
 
           return exerciseData;
@@ -336,34 +323,6 @@ const EditScheduleScreen = () => {
             />
           </View>
         </View>
-        {scheduleType === '1-day' && (
-          <View style={styles.fieldRow}>
-            <View style={[styles.field, { flex: 1 }]}>
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Day of Week</Text>
-              <View style={styles.daySelector}>
-                {DAYS.map(day => (
-                  <TouchableOpacity
-                    key={day}
-                    style={[
-                      styles.dayButton,
-                      { backgroundColor: colors.backgroundSecondary },
-                      item.dayOfWeek === day && [styles.dayButtonActive, { backgroundColor: colors.primary }]
-                    ]}
-                    onPress={() => updateExercise(index, 'dayOfWeek', item.dayOfWeek === day ? '' : day)}
-                  >
-                    <Text style={[
-                      styles.dayButtonText,
-                      { color: colors.textSecondary },
-                      item.dayOfWeek === day && [styles.dayButtonTextActive, { color: colors.white }]
-                    ]}>
-                      {day.charAt(0).toUpperCase() + day.slice(1, 3)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-        )}
         <View style={styles.field}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Notes</Text>
           <TextInput
@@ -389,7 +348,16 @@ const EditScheduleScreen = () => {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+      >
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+      >
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Basic Information</Text>
           <View style={[styles.editCard, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
@@ -641,7 +609,11 @@ const EditScheduleScreen = () => {
           presentationStyle="pageSheet"
           onRequestClose={() => setShowExerciseModal(false)}
         >
-          <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <KeyboardAvoidingView
+            style={[styles.modalContainer, { backgroundColor: colors.background }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+          >
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Select Exercise</Text>
               <TouchableOpacity onPress={() => setShowExerciseModal(false)}>
@@ -679,6 +651,7 @@ const EditScheduleScreen = () => {
                   item.category?.toLowerCase().includes(searchQuery.toLowerCase())
                 )}
                 keyExtractor={(item) => item._id}
+                keyboardShouldPersistTaps="handled"
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     style={[styles.exerciseListItem, { borderBottomColor: colors.border }]}
@@ -691,10 +664,11 @@ const EditScheduleScreen = () => {
                 ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No exercises found</Text>}
               />
             )}
-          </View>
+          </KeyboardAvoidingView>
         </Modal>
 
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

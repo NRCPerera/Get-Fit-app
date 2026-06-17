@@ -39,9 +39,12 @@ export default function KeyboardAvoidingWrapper({
     behavior,
     showsVerticalScrollIndicator = false,
     backgroundColor,
+    keyboardShouldPersistTaps = 'handled',
+    keyboardDismissMode,
 }) {
     // Determine behavior based on platform
     const keyboardBehavior = behavior || (Platform.OS === 'ios' ? 'padding' : 'height');
+    const dismissMode = keyboardDismissMode || (Platform.OS === 'ios' ? 'interactive' : 'on-drag');
 
     // Calculate offset - iOS needs more offset due to navigation headers
     const offset = Platform.OS === 'ios' ? 90 + keyboardVerticalOffset : keyboardVerticalOffset;
@@ -55,7 +58,10 @@ export default function KeyboardAvoidingWrapper({
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
-                keyboardShouldPersistTaps="handled"
+                keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+                keyboardDismissMode={dismissMode}
+                contentInsetAdjustmentBehavior="automatic"
+                automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
                 showsVerticalScrollIndicator={showsVerticalScrollIndicator}
                 scrollEnabled={scrollEnabled}
                 bounces={true}

@@ -1,148 +1,51 @@
-# Gym Management System - Mobile App
+# Get Fit Mobile App
 
-A comprehensive mobile application for gym management built with React Native and Expo.
+A React Native + Expo mobile app for Get Fit members and instructors.
 
-## Features
+## Setup
 
-- **User Authentication**: Login, registration, and password recovery
-- **Role-Based Access**: Different interfaces for members, instructors, and admins
-- **Exercise Library**: Browse exercises with categories and difficulty levels
-- **Training Schedules**: Create and manage workout schedules
-- **Nutrition Plans**: View and track nutrition plans
-- **Instructor Profiles**: Browse instructors and view reviews
-- **Payment Integration**: Stripe payment processing
-- **Medical Forms**: Health information collection
-- **Notifications**: Real-time push notifications
-- **Offline Support**: Basic offline functionality
-
-## Tech Stack
-
-- **Framework**: React Native with Expo
-- **Navigation**: React Navigation v6
-- **State Management**: Redux Toolkit
-- **HTTP Client**: Axios
-- **Payments**: Stripe React Native
-- **Forms**: Formik with Yup validation
-- **Charts**: React Native Chart Kit
-- **Calendar**: React Native Calendars
-- **Storage**: Expo Secure Store
-- **Notifications**: Expo Notifications
-
-## Installation
-
-1. Clone the repository
-2. Install dependencies:
+1. Install dependencies:
    ```bash
    npm install
    ```
-
-3. Create a `.env` file based on `.env.example`:
-   ```bash
-   cp .env.example .env
-   ```
-
-4. Update the `.env` file with your configuration values
-
-5. Start the development server:
+2. Create `.env` from `.env.example` and point `EXPO_PUBLIC_API_URL` at your backend.
+3. Start Expo:
    ```bash
    npm start
    ```
 
-6. Run on specific platforms:
-   ```bash
-   npm run android  # Android
-   npm run ios      # iOS
-   npm run web      # Web
-   ```
-
 ## Environment Variables
 
-- `API_URL`: Backend API URL
-- `STRIPE_PUBLISHABLE_KEY`: Stripe publishable key
-- `FIREBASE_API_KEY`: Firebase API key
-- `FIREBASE_AUTH_DOMAIN`: Firebase auth domain
-- `FIREBASE_PROJECT_ID`: Firebase project ID
-- `FIREBASE_STORAGE_BUCKET`: Firebase storage bucket
-- `FIREBASE_MESSAGING_SENDER_ID`: Firebase messaging sender ID
-- `FIREBASE_APP_ID`: Firebase app ID
+- `EXPO_PUBLIC_API_URL`: Base URL of the backend API used by the mobile app, including the forced-update check.
 
-## Project Structure
+## Forced Updates
 
-```
-src/
-├── api/              # API client and endpoints
-├── assets/           # Images, icons, fonts
-├── components/       # Reusable components
-│   ├── common/       # Common UI components
-│   ├── exercise/     # Exercise-related components
-│   ├── schedule/     # Schedule-related components
-│   ├── instructor/   # Instructor-related components
-│   ├── nutrition/    # Nutrition-related components
-│   ├── payment/      # Payment-related components
-│   └── forms/        # Form components
-├── navigation/       # Navigation configuration
-├── screens/          # Screen components
-│   ├── auth/         # Authentication screens
-│   ├── member/       # Member screens
-│   ├── instructor/   # Instructor screens
-│   └── admin/        # Admin screens
-├── store/            # Redux store and slices
-├── hooks/            # Custom React hooks
-├── utils/            # Utility functions
-├── styles/           # Style definitions
-└── services/         # External services
-```
+The app checks `${EXPO_PUBLIC_API_URL}/api/app-version` at startup before users can access the main app. While the check runs, the existing loading screen stays visible. If the installed native version is below the required minimum for the current platform, the app shows a mandatory update screen and only allows the user to open the App Store or Google Play.
 
-## User Roles
+### How it works
 
-### Member
-- View and manage profile
-- Browse exercise library
-- Create and manage schedules
-- Browse instructors
-- Make payments
-- Submit medical forms
-- View nutrition plans
+- The installed native version comes from `expo-application` via `Application.nativeApplicationVersion`.
+- The backend returns per-platform rules for `minimumVersion`, `latestVersion`, `storeUrl`, and `message`.
+- If the API is unavailable or returns invalid data, the app does not block access.
 
-### Instructor
-- Manage instructor profile
-- View assigned clients
-- Create schedules for clients
-- Create nutrition plans
-- View earnings
-- Manage availability
+### How to change the minimum required version
 
-### Admin
-- Manage all users
-- Manage exercises
-- View analytics
-- Manage payments
-- System administration
+You can raise the required version on the backend by changing these environment variables and redeploying the API. You do not need to publish a new mobile binary just to tighten the minimum supported version.
 
-## Development
+- `IOS_MINIMUM_VERSION`
+- `ANDROID_MINIMUM_VERSION`
+- `IOS_LATEST_VERSION`
+- `ANDROID_LATEST_VERSION`
 
-- **Start development server**: `npm start`
-- **Run on Android**: `npm run android`
-- **Run on iOS**: `npm run ios`
-- **Run on Web**: `npm run web`
-- **Build for production**: `expo build`
+### Store URLs you must replace before production
 
-## License
+- `IOS_STORE_URL`: Use your real App Store product URL, which looks like `https://apps.apple.com/app/id1234567890`.
+- `ANDROID_STORE_URL`: Use your real Google Play listing URL, which looks like `https://play.google.com/store/apps/details?id=com.yourcompany.getfit`.
 
-ISC
+### Release reminder
 
+Increase the mobile app version in `app.json` before every App Store / Play Store release. Forced updates compare the installed native version from the shipped app build, so the store release version must move forward each time.
 
+### iOS limitation
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+iOS cannot silently install updates. The app can only redirect the user to the App Store when an update is required.

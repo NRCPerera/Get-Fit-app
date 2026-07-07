@@ -52,6 +52,10 @@ export const instructorAPI = {
     const res = await apiClient.get('/instructors/my-allocation');
     return res.data;
   },
+  getMyCurrentSubscription: async () => {
+    const res = await apiClient.get('/instructors/my-subscription');
+    return res.data;
+  },
   // Instructor allocation management
   getMyAllocatedMembers: async () => {
     const res = await apiClient.get('/instructors/me/allocated-members');

@@ -28,6 +28,7 @@ const InstructorDetailScreen = () => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
   const [subscribing, setSubscribing] = useState(false);
+  const [subscribedToOther, setSubscribedToOther] = useState(null); // null or { name, userId }
 
   // Allocation state (free instructor assignment)
   const [isAllocated, setIsAllocated] = useState(false);
@@ -48,13 +49,29 @@ const InstructorDetailScreen = () => {
       // Check subscription and allocation status using instructor's userId
       const instructorUserId = inst?.userId || inst?.user?._id;
       if (instructorUserId) {
-        // Check subscription status
+        // Check member's current paid subscription (to any instructor)
         try {
-          const subRes = await instructorAPI.checkSubscriptionStatus(instructorUserId);
-          const subData = subRes?.data || subRes;
-          setIsSubscribed(subData?.isSubscribed || false);
+          const currentSubRes = await instructorAPI.getMyCurrentSubscription();
+          const currentSubData = currentSubRes?.data || currentSubRes;
+          if (currentSubData?.hasSubscription && currentSubData?.subscription) {
+            const subInstructorId = currentSubData.subscription.instructorId;
+            if (subInstructorId === instructorUserId) {
+              setIsSubscribed(true);
+              setSubscribedToOther(null);
+            } else {
+              setIsSubscribed(false);
+              setSubscribedToOther({
+                name: currentSubData?.instructor?.name || 'another instructor',
+                userId: subInstructorId
+              });
+            }
+          } else {
+            setIsSubscribed(false);
+            setSubscribedToOther(null);
+          }
         } catch (e) {
           setIsSubscribed(false);
+          setSubscribedToOther(null);
         }
 
         // Check member's current allocation (to any instructor)
@@ -85,6 +102,7 @@ const InstructorDetailScreen = () => {
         }
       } else {
         setIsSubscribed(false);
+        setSubscribedToOther(null);
         setIsAllocated(false);
         setAllocatedToOther(null);
       }
@@ -410,39 +428,58 @@ const InstructorDetailScreen = () => {
                 </View>
                 <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
                   Subscribe for personalized training plans, direct messaging, and dedicated support.
+                  {' '}You can only have one active personal training instructor at a time.
                 </Text>
 
-                <View style={styles.subscriptionActions}>
-                  <Button
-                    title={
-                      checkingSubscription
-                        ? 'Loading...'
-                        : subscribing
-                          ? (isSubscribed ? 'Unsubscribing...' : 'Processing...')
-                          : (isSubscribed ? 'Subscribed ✓' : 'Subscribe for Personal Training')
-                    }
-                    onPress={isSubscribed ? handleUnsubscribe : handleSubscribe}
-                    disabled={subscribing || checkingSubscription}
-                    loading={subscribing || checkingSubscription}
-                    variant={isSubscribed ? 'danger' : 'secondary'}
-                    fullWidth={!isSubscribed}
-                    icon={isSubscribed ? 'checkmark-circle' : 'card-outline'}
-                    size="lg"
-                    style={isSubscribed ? styles.subscribeButtonSmall : styles.subscribeButton}
-                  />
-
-                  {/* Message Button - Only visible when subscribed */}
-                  {isSubscribed && !checkingSubscription && (
+                {(subscribedToOther || allocatedToOther) && !isSubscribed ? (
+                  <View style={[styles.allocatedElsewhereBanner, { backgroundColor: colors.warning + '12', borderColor: colors.warning + '30' }]}>
+                    <Ionicons name="information-circle" size={20} color={colors.warning} />
+                    <View style={styles.allocatedElsewhereContent}>
+                      <Text style={[styles.allocatedElsewhereTitle, { color: colors.text }]}>
+                        {subscribedToOther
+                          ? 'You are currently subscribed to ' + subscribedToOther.name
+                          : 'You are currently allocated to ' + allocatedToOther.name}
+                      </Text>
+                      <Text style={[styles.allocatedElsewhereDesc, { color: colors.textSecondary }]}>
+                        {subscribedToOther
+                          ? 'Unsubscribe from your current personal training instructor before subscribing to this one'
+                          : 'Remove your current instructor allocation before subscribing to a different instructor for personal training'}
+                      </Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.subscriptionActions}>
                     <Button
-                      title="Message"
-                      onPress={handleMessage}
-                      variant="secondary"
-                      icon="chatbubble-outline"
+                      title={
+                        checkingSubscription
+                          ? 'Loading...'
+                          : subscribing
+                            ? (isSubscribed ? 'Unsubscribing...' : 'Processing...')
+                            : (isSubscribed ? 'Subscribed' : 'Subscribe for Personal Training')
+                      }
+                      onPress={isSubscribed ? handleUnsubscribe : handleSubscribe}
+                      disabled={subscribing || checkingSubscription}
+                      loading={subscribing || checkingSubscription}
+                      variant={isSubscribed ? 'danger' : 'secondary'}
+                      fullWidth={!isSubscribed}
+                      icon={isSubscribed ? 'checkmark-circle' : 'card-outline'}
                       size="lg"
-                      style={styles.messageButton}
+                      style={isSubscribed ? styles.subscribeButtonSmall : styles.subscribeButton}
                     />
-                  )}
-                </View>
+
+                    {/* Message Button - Only visible when subscribed */}
+                    {isSubscribed && !checkingSubscription && (
+                      <Button
+                        title="Message"
+                        onPress={handleMessage}
+                        variant="secondary"
+                        icon="chatbubble-outline"
+                        size="lg"
+                        style={styles.messageButton}
+                      />
+                    )}
+                  </View>
+                )}
               </View>
             )}
 
@@ -805,4 +842,5 @@ const styles = StyleSheet.create({
 });
 
 export default InstructorDetailScreen;
+
 

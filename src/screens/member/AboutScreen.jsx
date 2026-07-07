@@ -193,7 +193,7 @@ const AboutScreen = () => {
                 {/* Footer */}
                 <View style={styles.footer}>
                     <Text style={[styles.footerText, { color: colors.text }]}>Made with ❤️ in Sri Lanka</Text>
-                    <Text style={[styles.copyrightText, { color: colors.textSecondary }]}>© 2024 Get Fit. All rights reserved.</Text>
+                    <Text style={[styles.copyrightText, { color: colors.textSecondary }]}>© 2026 Get Fit. All rights reserved.</Text>
                 </View>
             </ScrollView>
         </View>

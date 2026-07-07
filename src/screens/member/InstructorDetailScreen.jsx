@@ -284,7 +284,7 @@ const InstructorDetailScreen = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <BackButton style={styles.backButton} iconName="arrow-back" color={colors.text} />
+          <BackButton style={styles.backButton} color={colors.text} />
         </View>
 
         {error && (
@@ -805,3 +805,4 @@ const styles = StyleSheet.create({
 });
 
 export default InstructorDetailScreen;
+

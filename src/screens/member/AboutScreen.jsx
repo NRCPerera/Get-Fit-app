@@ -18,7 +18,7 @@ import { useStyles } from '../../styles/useStyles';
 import Card from '../../components/common/Card';
 import BackButton from '../../components/common/BackButton';
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.2.7';
 const BUILD_NUMBER = '1';
 
 const AboutScreen = () => {
@@ -33,11 +33,11 @@ const AboutScreen = () => {
     };
 
     const handlePrivacyPolicy = () => {
-        Linking.openURL('https://getfit.lk/privacy-policy');
+        Linking.openURL('https://getfit.lk/privacy');
     };
 
     const handleTermsOfService = () => {
-        Linking.openURL('https://getfit.lk/terms-of-service');
+        Linking.openURL('https://getfit.lk/terms');
     };
 
     const handleInstagram = () => {
@@ -45,7 +45,7 @@ const AboutScreen = () => {
     };
 
     const handleFacebook = () => {
-        Linking.openURL('https://facebook.com/getfit.lk');
+        Linking.openURL('https://www.facebook.com/share/1BViMMePQN/');
     };
 
     // Use dynamic colors for features
@@ -81,7 +81,7 @@ const AboutScreen = () => {
                     <BackButton style={styles.backButton} />
                     <View style={styles.headerTitleContainer}>
                         <Text style={styles.headerTitle}>About</Text>
-                        <Text style={styles.headerSubtitle}>Learn more about GetFit</Text>
+                        <Text style={styles.headerSubtitle}>Learn more about Get Fit</Text>
                     </View>
                     <View style={styles.headerIconContainer}>
                         <Ionicons name="information-circle" size={24} color="#FFFFFF" />
@@ -106,7 +106,7 @@ const AboutScreen = () => {
                             <Ionicons name="fitness" size={48} color="#FFFFFF" />
                         </LinearGradient>
                     </View>
-                    <Text style={[styles.appName, { color: colors.text }]}>GetFit</Text>
+                    <Text style={[styles.appName, { color: colors.text }]}>Get Fit</Text>
                     <Text style={[styles.appTagline, { color: colors.textSecondary }]}>Your Fitness Journey Starts Here</Text>
                     <View style={[styles.versionContainer, { backgroundColor: colors.primary + '15' }]}>
                         <Text style={[styles.versionText, { color: colors.primary }]}>Version {APP_VERSION} ({BUILD_NUMBER})</Text>
@@ -115,9 +115,9 @@ const AboutScreen = () => {
 
                 {/* About Description */}
                 <Card variant="elevated" style={styles.descriptionCard}>
-                    <Text style={[styles.descriptionTitle, { color: colors.text }]}>About GetFit</Text>
+                    <Text style={[styles.descriptionTitle, { color: colors.text }]}>About Get Fit</Text>
                     <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>
-                        GetFit is your all-in-one fitness companion designed to help you achieve your health and wellness goals.
+                        Get Fit is your all-in-one fitness companion designed to help you achieve your health and wellness goals.
                         Whether you're a beginner or an experienced athlete, our platform connects you with expert instructors,
                         personalized workout plans, and nutrition guidance.
                     </Text>
@@ -193,7 +193,7 @@ const AboutScreen = () => {
                 {/* Footer */}
                 <View style={styles.footer}>
                     <Text style={[styles.footerText, { color: colors.text }]}>Made with ❤️ in Sri Lanka</Text>
-                    <Text style={[styles.copyrightText, { color: colors.textSecondary }]}>© 2024 GetFit. All rights reserved.</Text>
+                    <Text style={[styles.copyrightText, { color: colors.textSecondary }]}>© 2024 Get Fit. All rights reserved.</Text>
                 </View>
             </ScrollView>
         </View>
@@ -417,3 +417,8 @@ const styles = StyleSheet.create({
 });
 
 export default AboutScreen;
+
+
+
+
+

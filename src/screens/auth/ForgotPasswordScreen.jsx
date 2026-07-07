@@ -250,7 +250,7 @@ const ForgotPasswordScreen = () => {
         <View style={styles.header}>
           <BackButton
             style={styles.backButton}
-            iconName="arrow-back"
+           
             color={colors.text}
             onPress={handleBack}
           />
@@ -473,3 +473,4 @@ const styles = StyleSheet.create({
 });
 
 export default ForgotPasswordScreen;
+

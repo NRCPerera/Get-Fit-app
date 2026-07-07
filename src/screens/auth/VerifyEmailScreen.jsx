@@ -114,7 +114,7 @@ const VerifyEmailScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <BackButton style={styles.backButton} iconName="arrow-back" color={colors.text} />
+          <BackButton style={styles.backButton} color={colors.text} />
         </View>
 
         <View style={styles.content}>
@@ -309,3 +309,4 @@ const styles = StyleSheet.create({
 });
 
 export default VerifyEmailScreen;
+

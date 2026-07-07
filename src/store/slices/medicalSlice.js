@@ -12,7 +12,7 @@ export const fetchMedicalForm = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await medicalAPI.getMedicalForm();
-      const payload = res?.data || res;
+      const payload = res?.data?.form || null;
       return payload;
     } catch (error) {
       const errorMessage = error?.response?.data?.message ||
@@ -33,7 +33,7 @@ export const updateMedicalForm = createAsyncThunk(
       await medicalAPI.updateMedicalForm(data);
       // Fetch fresh form data after update
       const res = await medicalAPI.getMedicalForm();
-      return res?.data || res;
+      return res?.data?.form || null;
     } catch (error) {
       const errorMessage = error?.response?.data?.message ||
         error?.response?.data?.error ||
@@ -87,3 +87,4 @@ const medicalSlice = createSlice({
 
 export const { clearError } = medicalSlice.actions;
 export default medicalSlice.reducer;
+

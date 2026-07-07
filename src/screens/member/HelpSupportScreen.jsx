@@ -65,7 +65,7 @@ const HelpSupportScreen = () => {
         {
             icon: 'call',
             label: 'Call Us',
-            subtitle: '+94 77 123 4567',
+            subtitle: '+94 76 393 9790',
             color: colors.success,
             onPress: handlePhone
         },
@@ -144,16 +144,32 @@ const HelpSupportScreen = () => {
                     </View>
                     <View style={styles.supportHoursContent}>
                         <View style={styles.hoursRow}>
-                            <Text style={[styles.hoursDay, { color: colors.text }]}>Monday - Friday</Text>
-                            <Text style={[styles.hoursTime, { color: colors.primary }]}>8:00 AM - 8:00 PM</Text>
+                            <Text style={[styles.hoursDay, { color: colors.text }]}>Monday</Text>
+                            <Text style={[styles.hoursTime, { color: colors.primary }]}>5 AM - 10 PM</Text>
+                        </View>
+                        <View style={styles.hoursRow}>
+                            <Text style={[styles.hoursDay, { color: colors.text }]}>Tuesday</Text>
+                            <Text style={[styles.hoursTime, { color: colors.primary }]}>5 AM - 10 PM</Text>
+                        </View>
+                        <View style={styles.hoursRow}>
+                            <Text style={[styles.hoursDay, { color: colors.text }]}>Wednesday</Text>
+                            <Text style={[styles.hoursTime, { color: colors.primary }]}>5 AM - 10 PM</Text>
+                        </View>
+                        <View style={styles.hoursRow}>
+                            <Text style={[styles.hoursDay, { color: colors.text }]}>Thursday</Text>
+                            <Text style={[styles.hoursTime, { color: colors.primary }]}>5 AM - 10 PM</Text>
+                        </View>
+                        <View style={styles.hoursRow}>
+                            <Text style={[styles.hoursDay, { color: colors.text }]}>Friday</Text>
+                            <Text style={[styles.hoursTime, { color: colors.primary }]}>5 AM - 10 PM</Text>
                         </View>
                         <View style={styles.hoursRow}>
                             <Text style={[styles.hoursDay, { color: colors.text }]}>Saturday</Text>
-                            <Text style={[styles.hoursTime, { color: colors.primary }]}>9:00 AM - 6:00 PM</Text>
+                            <Text style={[styles.hoursTime, { color: colors.primary }]}>6 AM - 9 PM</Text>
                         </View>
                         <View style={styles.hoursRow}>
                             <Text style={[styles.hoursDay, { color: colors.text }]}>Sunday</Text>
-                            <Text style={[styles.hoursTime, { color: colors.primary }]}>10:00 AM - 4:00 PM</Text>
+                            <Text style={[styles.hoursTime, { color: colors.error }]}>Closed</Text>
                         </View>
                     </View>
                 </Card>

@@ -298,7 +298,7 @@ const MessagesScreen = ({ navigation }) => {
         <View style={styles.headerCircle2} />
         
         <View style={styles.headerTop}>
-          <BackButton style={styles.backButton} iconName="arrow-back" />
+          <BackButton style={styles.backButton} />
           <View style={styles.headerContent}>
             <Text style={styles.headerTitle}>Messages</Text>
             <Text style={styles.headerSubtitle}>

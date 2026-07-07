@@ -375,7 +375,7 @@ const ChatScreen = ({ navigation, route }) => {
       <View style={styles.headerCircle2} />
       
       <View style={styles.headerTop}>
-        <BackButton style={styles.backButton} iconName="arrow-back" />
+        <BackButton style={styles.backButton} />
 
         <TouchableOpacity style={styles.headerInfo} activeOpacity={0.8}>
           {recipient.profilePicture ? (

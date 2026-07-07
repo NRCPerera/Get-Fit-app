@@ -114,7 +114,7 @@ const RegisterScreen = () => {
             <Ionicons name="fitness" size={48} color={colors.primary} />
           </View>
           <Text style={[headerStyles.title, { color: colors.text }]}>Create Account</Text>
-          <Text style={[headerStyles.subtitle, { color: colors.textSecondary }]}>Join Get-Fit Gym and start your fitness journey</Text>
+          <Text style={[headerStyles.subtitle, { color: colors.textSecondary }]}>Join Get Fit and start your fitness journey</Text>
         </View>
 
         {/* Form */}
@@ -390,3 +390,4 @@ const styles = StyleSheet.create({
 });
 
 export default RegisterScreen;
+

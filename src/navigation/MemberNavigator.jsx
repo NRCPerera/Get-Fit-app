@@ -191,7 +191,7 @@ const ProfileStack = () => (
     <Stack.Screen
       name="MedicalForm"
       component={MedicalFormScreen}
-      options={{ title: 'Medical Information' }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="Nutrition"
@@ -353,5 +353,6 @@ const MemberNavigator = () => {
 };
 
 export default MemberNavigator;
+
 
 

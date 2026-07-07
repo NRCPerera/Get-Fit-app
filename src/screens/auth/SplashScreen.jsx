@@ -13,7 +13,7 @@ const SplashScreen = () => {
       <View style={[styles.logoContainer, { backgroundColor: colors.primary + '15' }]}>
         <Ionicons name="fitness" size={64} color={colors.primary} />
       </View>
-      <Text style={[styles.title, { color: colors.primary }]}>Get-Fit Gym</Text>
+      <Text style={[styles.title, { color: colors.primary }]}>Get Fit</Text>
       <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Your fitness journey starts here</Text>
       <ActivityIndicator 
         size="large" 
@@ -60,3 +60,4 @@ const styles = StyleSheet.create({
 });
 
 export default SplashScreen;
+

@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "GetFit",
+    "name": "Get Fit",
     "slug": "gym-management-app",
-    "version": "1.2.6",
+    "version": "1.2.7",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -17,8 +17,8 @@
       "bundleIdentifier": "com.ridma2001.getfit",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "GetFit needs access to your camera to allow you to take profile pictures or scan gym equipment.",
-        "NSPhotoLibraryUsageDescription": "GetFit needs access to your photos to let you upload a profile picture.",
+        "NSCameraUsageDescription": "Get Fit needs access to your camera to allow you to take profile pictures or scan gym equipment.",
+        "NSPhotoLibraryUsageDescription": "Get Fit needs access to your photos to let you upload a profile picture.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -43,13 +43,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow GetFit to access your camera."
+          "cameraPermission": "Allow Get Fit to access your camera."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow GetFit to access your photos."
+          "photosPermission": "Allow Get Fit to access your photos."
         }
       ],
       "expo-video",
@@ -71,3 +71,8 @@
     "owner": "ridma2001"
   }
 }
+
+
+
+
+

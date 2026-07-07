@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 
 const ThemeSelector = () => {
-    const { theme, isDark, toggleTheme, themeMode, setThemeMode } = useTheme();
-    const { colors, spacing, typography, borderRadius } = theme;
+    const { theme, themeMode, setThemeMode } = useTheme();
+    const { colors, borderRadius } = theme;
 
     const options = [
         { key: 'light', label: 'Light', icon: 'sunny' },
@@ -52,27 +52,6 @@ const ThemeSelector = () => {
                     </TouchableOpacity>
                 ))}
             </View>
-
-            {/* Quick Toggle */}
-            <View style={[styles.toggleContainer, { borderTopColor: colors.border }]}>
-                <View style={styles.toggleLeft}>
-                    <Ionicons
-                        name={isDark ? 'moon' : 'sunny'}
-                        size={24}
-                        color={isDark ? colors.secondary : colors.primary}
-                    />
-                    <Text style={[styles.toggleLabel, { color: colors.text }]}>
-                        Dark Mode
-                    </Text>
-                </View>
-                <Switch
-                    value={isDark}
-                    onValueChange={toggleTheme}
-                    trackColor={{ false: colors.border, true: colors.primary }}
-                    thumbColor={isDark ? colors.secondary : colors.white}
-                    ios_backgroundColor={colors.border}
-                />
-            </View>
         </View>
     );
 };
@@ -109,23 +88,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
     },
-    toggleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: 20,
-        marginTop: 20,
-        borderTopWidth: 1,
-    },
-    toggleLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    toggleLabel: {
-        fontSize: 16,
-        fontWeight: '600',
-    },
 });
 
 export default ThemeSelector;
+

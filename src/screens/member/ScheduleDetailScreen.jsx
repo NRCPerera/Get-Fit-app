@@ -33,7 +33,7 @@ const ScheduleDetailScreen = () => {
             }
           }}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
       ),
     });
@@ -412,3 +412,4 @@ const styles = StyleSheet.create({
 });
 
 export default ScheduleDetailScreen;
+

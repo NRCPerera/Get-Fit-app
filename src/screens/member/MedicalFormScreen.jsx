@@ -1,11 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, StatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
 import { medicalAPI } from '../../api/medical.api';
 import KeyboardAvoidingWrapper from '../../components/common/KeyboardAvoidingWrapper';
+import BackButton from '../../components/common/BackButton';
 
 const MedicalFormScreen = () => {
+  const insets = useSafeAreaInsets();
   const { theme: dynamicTheme, isDark } = useTheme();
   const colors = dynamicTheme.colors;
   const [form, setForm] = useState({
@@ -29,8 +33,8 @@ const MedicalFormScreen = () => {
     try {
       setError('');
       const res = await medicalAPI.getMedicalForm();
-      const data = res?.data?.medical || res?.data || res;
-      if (data && Object.keys(data).length) {
+      const data = res?.data?.form || null;
+      if (data) {
         setForm({
           heightCm: data.heightCm ? String(data.heightCm) : '',
           weightKg: data.weightKg ? String(data.weightKg) : '',
@@ -44,6 +48,17 @@ const MedicalFormScreen = () => {
         });
         setExists(true);
       } else {
+        setForm({
+          heightCm: '',
+          weightKg: '',
+          bloodPressure: '',
+          heartRate: '',
+          conditions: '',
+          allergies: '',
+          medications: '',
+          injuries: '',
+          notes: '',
+        });
         setExists(false);
       }
     } catch (e) {
@@ -105,56 +120,78 @@ const MedicalFormScreen = () => {
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
   return (
-    <KeyboardAvoidingWrapper
-      contentContainerStyle={styles.content}
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      backgroundColor={colors.background}
-    >
-      <Text style={[styles.title, { color: colors.textPrimary }]}>Medical Information</Text>
-      {error ? <Text style={[styles.error, { color: colors.error }]}>{error}</Text> : null}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
-      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Height (cm)</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} keyboardType="number-pad" value={form.heightCm} onChangeText={(t) => setField('heightCm', t)} placeholder="e.g. 175" placeholderTextColor={colors.textSecondary} />
-        
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Weight (kg)</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} keyboardType="number-pad" value={form.weightKg} onChangeText={(t) => setField('weightKg', t)} placeholder="e.g. 70" placeholderTextColor={colors.textSecondary} />
-        
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Blood Pressure</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} value={form.bloodPressure} onChangeText={(t) => setField('bloodPressure', t)} placeholder="e.g. 120/80" placeholderTextColor={colors.textSecondary} />
-        
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Heart Rate (bpm)</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} keyboardType="number-pad" value={form.heartRate} onChangeText={(t) => setField('heartRate', t)} placeholder="e.g. 70" placeholderTextColor={colors.textSecondary} />
-      </View>
-
-      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Conditions (comma separated)</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} value={form.conditions} onChangeText={(t) => setField('conditions', t)} placeholder="e.g. Asthma" placeholderTextColor={colors.textSecondary} />
-        
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Allergies (comma separated)</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} value={form.allergies} onChangeText={(t) => setField('allergies', t)} placeholder="e.g. Peanuts" placeholderTextColor={colors.textSecondary} />
-        
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Medications (comma separated)</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} value={form.medications} onChangeText={(t) => setField('medications', t)} placeholder="e.g. Ibuprofen" placeholderTextColor={colors.textSecondary} />
-        
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Injuries (comma separated)</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} value={form.injuries} onChangeText={(t) => setField('injuries', t)} placeholder="e.g. Knee pain" placeholderTextColor={colors.textSecondary} />
-        
-        <Text style={[styles.label, { color: colors.textSecondary }]}>Notes</Text>
-        <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, height: 100, textAlignVertical: 'top' }]} value={form.notes} onChangeText={(t) => setField('notes', t)} placeholder="Anything else we should know" placeholderTextColor={colors.textSecondary} multiline />
-      </View>
-
-      <TouchableOpacity 
-        accessibilityRole="button" 
-        accessibilityLabel="Save medical information" 
-        onPress={onSave} 
-        disabled={!canSave} 
-        style={[styles.saveBtn, { backgroundColor: colors.primary }, !canSave && { opacity: 0.6 }]}
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={colors.gradients.primary}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.headerGradient, { paddingTop: insets.top + 10 }]}
       >
-        <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save'}</Text>
-      </TouchableOpacity>
-    </KeyboardAvoidingWrapper>
+        {/* Decorative circles */}
+        <View style={styles.headerCircle1} />
+        <View style={styles.headerCircle2} />
+        <View style={styles.headerContent}>
+          <BackButton style={styles.backButton} color="#FFFFFF" />
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>Medical Information</Text>
+            <Text style={styles.headerSubtitle}>Keep your health details up to date</Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      <KeyboardAvoidingWrapper
+        contentContainerStyle={styles.content}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        backgroundColor={colors.background}
+      >
+        {error ? <Text style={[styles.error, { color: colors.error }]}>{error}</Text> : null}
+
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Height (cm)</Text>
+          <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} keyboardType="number-pad" value={form.heightCm} onChangeText={(t) => setField('heightCm', t)} placeholder="e.g. 175" placeholderTextColor={colors.textSecondary} />
+          
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Weight (kg)</Text>
+          <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} keyboardType="number-pad" value={form.weightKg} onChangeText={(t) => setField('weightKg', t)} placeholder="e.g. 70" placeholderTextColor={colors.textSecondary} />
+          
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Blood Pressure</Text>
+          <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} value={form.bloodPressure} onChangeText={(t) => setField('bloodPressure', t)} placeholder="e.g. 120/80" placeholderTextColor={colors.textSecondary} />
+          
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Heart Rate (bpm)</Text>
+          <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} keyboardType="number-pad" value={form.heartRate} onChangeText={(t) => setField('heartRate', t)} placeholder="e.g. 70" placeholderTextColor={colors.textSecondary} />
+        </View>
+
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Conditions (comma separated)</Text>
+          <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} value={form.conditions} onChangeText={(t) => setField('conditions', t)} placeholder="e.g. Asthma" placeholderTextColor={colors.textSecondary} />
+          
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Allergies (comma separated)</Text>
+          <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} value={form.allergies} onChangeText={(t) => setField('allergies', t)} placeholder="e.g. Peanuts" placeholderTextColor={colors.textSecondary} />
+          
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Medications (comma separated)</Text>
+          <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} value={form.medications} onChangeText={(t) => setField('medications', t)} placeholder="e.g. Ibuprofen" placeholderTextColor={colors.textSecondary} />
+          
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Injuries (comma separated)</Text>
+          <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary }]} value={form.injuries} onChangeText={(t) => setField('injuries', t)} placeholder="e.g. Knee pain" placeholderTextColor={colors.textSecondary} />
+          
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Notes</Text>
+          <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.textPrimary, height: 100, textAlignVertical: 'top' }]} value={form.notes} onChangeText={(t) => setField('notes', t)} placeholder="Anything else we should know" placeholderTextColor={colors.textSecondary} multiline />
+        </View>
+
+        <TouchableOpacity 
+          accessibilityRole="button" 
+          accessibilityLabel="Save medical information" 
+          onPress={onSave} 
+          disabled={!canSave} 
+          style={[styles.saveBtn, { backgroundColor: colors.primary }, !canSave && { opacity: 0.6 }]}
+        >
+          <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save'}</Text>
+        </TouchableOpacity>
+      </KeyboardAvoidingWrapper>
+    </View>
   );
 };
 
@@ -162,15 +199,61 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1,
   },
+  headerGradient: {
+    paddingBottom: theme.spacing[6],
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: 'hidden',
+  },
+  headerCircle1: {
+    position: 'absolute',
+    top: -50,
+    right: -30,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  headerCircle2: {
+    position: 'absolute',
+    bottom: 20,
+    left: -40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing[4],
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitleContainer: {
+    flex: 1,
+    marginLeft: theme.spacing[3],
+  },
+  headerTitle: {
+    fontSize: theme.typography.fontSize['2xl'],
+    fontWeight: theme.typography.fontWeight.bold,
+    color: '#FFFFFF',
+  },
+  headerSubtitle: {
+    fontSize: theme.typography.fontSize.sm,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 2,
+  },
   content: { 
     padding: theme.spacing.md || 16,
-    paddingBottom: (theme.spacing.xl || 32) + 20, // Extra padding for scrolling past keyboard
-  },
-  title: { 
-    fontSize: theme.typography.fontSize['2xl'] || 24, 
-    fontWeight: theme.typography.fontWeight.bold || '700', 
-    marginBottom: theme.spacing.lg || 24,
-    letterSpacing: -0.5,
+    paddingTop: theme.spacing[4],
+    paddingBottom: (theme.spacing.xl || 32) + 20,
   },
   error: { 
     marginBottom: theme.spacing.md || 16,
@@ -227,3 +310,5 @@ const styles = StyleSheet.create({
 });
 
 export default MedicalFormScreen;
+
+

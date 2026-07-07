@@ -14,7 +14,7 @@ const OnboardingScreen1 = () => {
         </View>
         
         <View style={styles.textContainer}>
-          <Text style={headerStyles.title}>Welcome to Get-Fit</Text>
+          <Text style={headerStyles.title}>Welcome to Get Fit</Text>
           <Text style={headerStyles.subtitle}>
             Your personal fitness journey starts here. Track your workouts, 
             connect with trainers, and achieve your fitness goals.
@@ -53,3 +53,4 @@ const styles = StyleSheet.create({
 });
 
 export default OnboardingScreen1;
+

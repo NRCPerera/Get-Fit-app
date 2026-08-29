@@ -3,7 +3,7 @@
     "name": "Get Fit",
     "slug": "gym-management-app",
     "version": "1.2.7",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "getfit",
@@ -61,7 +61,17 @@
           "sounds": []
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "react-native-edge-to-edge",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {

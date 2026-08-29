@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { NavigationContainer } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
+import { SystemBars } from 'react-native-edge-to-edge';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Linking from 'expo-linking';
@@ -70,7 +70,7 @@ export default function App() {
       <Provider store={store}>
         <SafeAreaProvider>
           <NavigationContainer linking={linking}>
-            <StatusBar style="auto" />
+            <SystemBars style="auto" />
             <AppNavigator />
           </NavigationContainer>
         </SafeAreaProvider>

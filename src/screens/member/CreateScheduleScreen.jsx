@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Modal, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -12,10 +13,17 @@ const SCHEDULE_TYPES = ['1-day', '2-day', '3-day'];
 const DIFFICULTY_OPTIONS = ['beginner', 'intermediate', 'advanced'];
 const GOAL_OPTIONS = ['Weight Loss', 'Muscle Building', 'Strength Training', 'Cardio Fitness', 'Flexibility', 'Endurance'];
 
+// Approximate height of a bottom tab bar. If you know your exact tab bar
+// height (e.g. from useBottomTabBarHeight() when this screen lives inside
+// a Bottom Tab Navigator), use that instead of this constant.
+const TAB_BAR_FALLBACK_HEIGHT = 60;
+
 const CreateScheduleScreen = () => {
   const navigation = useNavigation();
   const { theme: dynamicTheme, isDark } = useTheme();
   const colors = dynamicTheme.colors;
+  const insets = useSafeAreaInsets();
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [scheduleType, setScheduleType] = useState('1-day');
@@ -173,7 +181,6 @@ const CreateScheduleScreen = () => {
     setSelectedDay(1);
   }, [scheduleType]);
 
-  // Helper: safely parse a date string, returns ISO string or undefined
   const parseDateSafe = (dateStr) => {
     if (!dateStr || typeof dateStr !== 'string' || dateStr.trim() === '') return undefined;
     const d = new Date(dateStr);
@@ -185,30 +192,25 @@ const CreateScheduleScreen = () => {
     try {
       setSaving(true);
 
-      // Build and filter exercises — only include those with at least one valid set+rep pair
       const mappedExercises = exercises.map(ex => {
         const exerciseData = {
           exerciseId: ex.exerciseId,
           scheduleDay: ex.scheduleDay || 1,
         };
 
-        // Only include duration if it's a valid positive integer
         if (ex.duration && ex.duration.toString().trim() !== '') {
           const dur = parseInt(ex.duration, 10);
           if (!isNaN(dur) && dur > 0) exerciseData.duration = dur;
         }
 
-        // Only include restTime if it's a valid positive integer
         if (ex.restTime && ex.restTime.toString().trim() !== '') {
           const rest = parseInt(ex.restTime, 10);
           if (!isNaN(rest) && rest > 0) exerciseData.restTime = rest;
         }
 
-        // Only include notes if non-empty
         const trimmedNotes = (ex.notes || '').trim();
         if (trimmedNotes) exerciseData.notes = trimmedNotes;
 
-        // Build valid set-rep pairs
         if (ex.setReps && ex.setReps.length > 0) {
           const validSetReps = ex.setReps
             .filter(sr => sr.sets !== '' && sr.reps !== '' && sr.sets != null && sr.reps != null)
@@ -224,9 +226,8 @@ const CreateScheduleScreen = () => {
         }
 
         return exerciseData;
-      }).filter(ex => ex.setReps && ex.setReps.length > 0); // drop exercises with no valid set-reps
+      }).filter(ex => ex.setReps && ex.setReps.length > 0);
 
-      // Front-end validation before hitting the API
       if (mappedExercises.length === 0) {
         Alert.alert(
           'Validation Error',
@@ -241,7 +242,6 @@ const CreateScheduleScreen = () => {
         exercises: mappedExercises,
       };
 
-      // Optional fields — only include if they have real values
       const trimmedDescription = description.trim();
       if (trimmedDescription) payload.description = trimmedDescription;
 
@@ -260,7 +260,6 @@ const CreateScheduleScreen = () => {
 
       const res = await scheduleAPI.createSchedule(payload);
 
-      // Catch cases where the API wrapper resolves instead of throwing on 4xx
       const statusCode = res?.status ?? res?.data?.statusCode;
       const isFail = res?.data?.status === 'fail' || res?.data?.status === 'error' || (statusCode && statusCode >= 400);
       if (isFail) {
@@ -387,373 +386,382 @@ const CreateScheduleScreen = () => {
   );
 
   return (
+    // FIX 1: behavior is now iOS-only. On Android, "height" behavior resizes
+    // the container while the keyboard is open and often fails to restore
+    // the layout cleanly once the keyboard is dismissed, which is what was
+    // pushing your Save button out of the touchable viewport. On Android we
+    // rely on windowSoftInputMode: "adjustResize" (see note below) instead.
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          // FIX 2: guarantee enough space below the last element (Save button)
+          // so it never renders underneath a bottom tab bar / nav bar, and so
+          // it's always fully scrollable into view above the keyboard too.
+          { paddingBottom: theme.spacing['2xl'] + TAB_BAR_FALLBACK_HEIGHT + insets.bottom },
+        ]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
       >
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Create Training Schedule</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Build your personalized workout plan</Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Basic Information</Text>
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>Schedule Name *</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g., Full Body Workout"
-            placeholderTextColor={colors.textSecondary}
-          />
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.text }]}>Create Training Schedule</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Build your personalized workout plan</Text>
         </View>
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>Schedule Type *</Text>
-          <View style={styles.optionRow}>
-            {SCHEDULE_TYPES.map(type => (
-              <TouchableOpacity
-                key={type}
-                style={[styles.optionButton, { backgroundColor: colors.backgroundSecondary }, scheduleType === type && [styles.optionButtonActive, { backgroundColor: colors.primary }]]}
-                onPress={() => setScheduleType(type)}
-              >
-                <Text style={[styles.optionText, { color: colors.textSecondary }, scheduleType === type && [styles.optionTextActive, { color: colors.white }]]}>
-                  {type === '1-day' ? '1 Day' : type === '2-day' ? '2 Days' : '3 Days'}
-                </Text>
-              </TouchableOpacity>
-            ))}
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Basic Information</Text>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>Schedule Name *</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+              value={name}
+              onChangeText={setName}
+              placeholder="e.g., Full Body Workout"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>Schedule Type *</Text>
+            <View style={styles.optionRow}>
+              {SCHEDULE_TYPES.map(type => (
+                <TouchableOpacity
+                  key={type}
+                  style={[styles.optionButton, { backgroundColor: colors.backgroundSecondary }, scheduleType === type && [styles.optionButtonActive, { backgroundColor: colors.primary }]]}
+                  onPress={() => setScheduleType(type)}
+                >
+                  <Text style={[styles.optionText, { color: colors.textSecondary }, scheduleType === type && [styles.optionTextActive, { color: colors.white }]]}>
+                    {type === '1-day' ? '1 Day' : type === '2-day' ? '2 Days' : '3 Days'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>Description</Text>
+            <TextInput
+              style={[styles.input, { height: 80, textAlignVertical: 'top', backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              placeholder="Describe your training schedule..."
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>Difficulty</Text>
+            <View style={styles.optionRow}>
+              {DIFFICULTY_OPTIONS.map(opt => (
+                <TouchableOpacity
+                  key={opt}
+                  style={[styles.optionButton, { backgroundColor: colors.backgroundSecondary }, difficulty === opt && [styles.optionButtonActive, { backgroundColor: colors.primary }]]}
+                  onPress={() => setDifficulty(difficulty === opt ? '' : opt)}
+                >
+                  <Text style={[styles.optionText, { color: colors.textSecondary }, difficulty === opt && [styles.optionTextActive, { color: colors.white }]]}>
+                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>Goals</Text>
+            <View style={styles.goalsContainer}>
+              {GOAL_OPTIONS.map(goal => (
+                <TouchableOpacity
+                  key={goal}
+                  style={[styles.goalButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }, goals.includes(goal) && [styles.goalButtonActive, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]]}
+                  onPress={() => toggleGoal(goal)}
+                >
+                  <Text style={[styles.goalText, { color: colors.text }, goals.includes(goal) && [styles.goalTextActive, { color: colors.primary }]]}>
+                    {goal}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </View>
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>Description</Text>
-          <TextInput
-            style={[styles.input, { height: 80, textAlignVertical: 'top', backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            placeholder="Describe your training schedule..."
-            placeholderTextColor={colors.textSecondary}
-          />
-        </View>
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>Difficulty</Text>
-          <View style={styles.optionRow}>
-            {DIFFICULTY_OPTIONS.map(opt => (
-              <TouchableOpacity
-                key={opt}
-                style={[styles.optionButton, { backgroundColor: colors.backgroundSecondary }, difficulty === opt && [styles.optionButtonActive, { backgroundColor: colors.primary }]]}
-                onPress={() => setDifficulty(difficulty === opt ? '' : opt)}
-              >
-                <Text style={[styles.optionText, { color: colors.textSecondary }, difficulty === opt && [styles.optionTextActive, { color: colors.white }]]}>
-                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>Goals</Text>
-          <View style={styles.goalsContainer}>
-            {GOAL_OPTIONS.map(goal => (
-              <TouchableOpacity
-                key={goal}
-                style={[styles.goalButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }, goals.includes(goal) && [styles.goalButtonActive, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]]}
-                onPress={() => toggleGoal(goal)}
-              >
-                <Text style={[styles.goalText, { color: colors.text }, goals.includes(goal) && [styles.goalTextActive, { color: colors.primary }]]}>
-                  {goal}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Date Range (Optional)</Text>
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>Start Date</Text>
-          <TouchableOpacity
-            style={[styles.dateButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            onPress={() => setShowStartDateModal(true)}
-          >
-            <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
-            <Text style={[styles.dateButtonText, !startDate && styles.dateButtonPlaceholder, { color: startDate ? colors.text : colors.textSecondary }]}>
-              {startDate || 'Select start date'}
-            </Text>
-            {startDate && (
-              <TouchableOpacity
-                onPress={(e) => {
-                  e.stopPropagation();
-                  setStartDate('');
-                }}
-                style={styles.clearButton}
-              >
-                <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-            )}
-          </TouchableOpacity>
-        </View>
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>End Date</Text>
-          <TouchableOpacity
-            style={[styles.dateButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            onPress={() => setShowEndDateModal(true)}
-          >
-            <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
-            <Text style={[styles.dateButtonText, !endDate && styles.dateButtonPlaceholder, { color: endDate ? colors.text : colors.textSecondary }]}>
-              {endDate || 'Select end date'}
-            </Text>
-            {endDate && (
-              <TouchableOpacity
-                onPress={(e) => {
-                  e.stopPropagation();
-                  setEndDate('');
-                }}
-                style={styles.clearButton}
-              >
-                <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Exercises *</Text>
-          <TouchableOpacity
-            style={[styles.addButton, { backgroundColor: colors.primary }]}
-            onPress={() => setShowExerciseModal(true)}
-          >
-            <Ionicons name="add" size={20} color={colors.white} />
-            <Text style={[styles.addButtonText, { color: colors.white }]}>Add Exercise</Text>
-          </TouchableOpacity>
-        </View>
-        {scheduleType !== '1-day' && (
-          <View style={styles.dayTabs}>
-            {Array.from({ length: scheduleType === '2-day' ? 2 : 3 }, (_, i) => i + 1).map(day => (
-              <TouchableOpacity
-                key={day}
-                style={[styles.dayTab, { backgroundColor: colors.backgroundSecondary }, selectedDay === day && [styles.dayTabActive, { backgroundColor: colors.primary }]]}
-                onPress={() => setSelectedDay(day)}
-              >
-                <Text style={[styles.dayTabText, { color: colors.textSecondary }, selectedDay === day && [styles.dayTabTextActive, { color: colors.white }]]}>
-                  Day {day}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-        {exercisesForSelectedDay.length === 0 ? (
-          <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
-            <Ionicons name="fitness-outline" size={48} color={colors.textSecondary} />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No exercises added</Text>
-            <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-              {scheduleType !== '1-day' ? `Tap "Add Exercise" to add exercises for Day ${selectedDay}` : 'Tap "Add Exercise" to get started'}
-            </Text>
-          </View>
-        ) : (
-          <FlatList
-            data={exercisesForSelectedDay}
-            keyExtractor={(item, index) => `${item.exerciseId}-${item.scheduleDay || 'single'}-${index}`}
-            renderItem={({ item, index }) => {
-              const actualIndex = exercisesForSelectedDay.findIndex(ex =>
-                ex.exerciseId === item.exerciseId &&
-                (scheduleType === '1-day' || ex.scheduleDay === item.scheduleDay)
-              );
-              return renderExerciseItem({ item, index: actualIndex });
-            }}
-            scrollEnabled={false}
-          />
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Additional Notes</Text>
-        <TextInput
-          style={[styles.input, { height: 100, textAlignVertical: 'top', backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-          value={notes}
-          onChangeText={setNotes}
-          multiline
-          placeholder="Add any additional notes about this schedule..."
-          placeholderTextColor={colors.textSecondary}
-        />
-      </View>
-
-      <TouchableOpacity
-        onPress={onSave}
-        disabled={!canSave}
-        style={[styles.saveButton, !canSave && styles.saveButtonDisabled, { backgroundColor: colors.primary }]}
-      >
-        <Text style={[styles.saveButtonText, { color: colors.white }]}>{saving ? 'Creating...' : 'Create Schedule'}</Text>
-      </TouchableOpacity>
-
-      {/* Exercise Picker Modal */}
-      <Modal
-        visible={showExerciseModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowExerciseModal(false)}
-      >
-        <KeyboardAvoidingView
-          style={[styles.modalContainer, { backgroundColor: colors.background }]}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
-        >
-          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Select Exercise</Text>
-            <TouchableOpacity onPress={() => setShowExerciseModal(false)}>
-              <Ionicons name="close" size={28} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={[styles.searchContainer, { borderBottomColor: colors.border }]}>
-            <View style={[styles.searchBar, { backgroundColor: colors.backgroundSecondary }]}>
-              <Ionicons name="search" size={20} color={colors.textSecondary} />
-              <TextInput
-                style={[styles.searchInput, { color: colors.text }]}
-                placeholder="Search exercises..."
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                autoCorrect={false}
-                placeholderTextColor={colors.textSecondary}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Date Range (Optional)</Text>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>Start Date</Text>
+            <TouchableOpacity
+              style={[styles.dateButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => setShowStartDateModal(true)}
+            >
+              <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+              <Text style={[styles.dateButtonText, !startDate && styles.dateButtonPlaceholder, { color: startDate ? colors.text : colors.textSecondary }]}>
+                {startDate || 'Select start date'}
+              </Text>
+              {startDate && (
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setStartDate('');
+                  }}
+                  style={styles.clearButton}
+                >
                   <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
                 </TouchableOpacity>
               )}
-            </View>
+            </TouchableOpacity>
           </View>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>End Date</Text>
+            <TouchableOpacity
+              style={[styles.dateButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => setShowEndDateModal(true)}
+            >
+              <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+              <Text style={[styles.dateButtonText, !endDate && styles.dateButtonPlaceholder, { color: endDate ? colors.text : colors.textSecondary }]}>
+                {endDate || 'Select end date'}
+              </Text>
+              {endDate && (
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setEndDate('');
+                  }}
+                  style={styles.clearButton}
+                >
+                  <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
 
-          {loadingExercises ? (
-            <View style={styles.modalLoading}>
-              <Text style={{ color: colors.text }}>Loading exercises...</Text>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Exercises *</Text>
+            <TouchableOpacity
+              style={[styles.addButton, { backgroundColor: colors.primary }]}
+              onPress={() => setShowExerciseModal(true)}
+            >
+              <Ionicons name="add" size={20} color={colors.white} />
+              <Text style={[styles.addButtonText, { color: colors.white }]}>Add Exercise</Text>
+            </TouchableOpacity>
+          </View>
+          {scheduleType !== '1-day' && (
+            <View style={styles.dayTabs}>
+              {Array.from({ length: scheduleType === '2-day' ? 2 : 3 }, (_, i) => i + 1).map(day => (
+                <TouchableOpacity
+                  key={day}
+                  style={[styles.dayTab, { backgroundColor: colors.backgroundSecondary }, selectedDay === day && [styles.dayTabActive, { backgroundColor: colors.primary }]]}
+                  onPress={() => setSelectedDay(day)}
+                >
+                  <Text style={[styles.dayTabText, { color: colors.textSecondary }, selectedDay === day && [styles.dayTabTextActive, { color: colors.white }]]}>
+                    Day {day}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          {exercisesForSelectedDay.length === 0 ? (
+            <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
+              <Ionicons name="fitness-outline" size={48} color={colors.textSecondary} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No exercises added</Text>
+              <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+                {scheduleType !== '1-day' ? `Tap "Add Exercise" to add exercises for Day ${selectedDay}` : 'Tap "Add Exercise" to get started'}
+              </Text>
             </View>
           ) : (
             <FlatList
-              data={availableExercises.filter(item =>
-                item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.category?.toLowerCase().includes(searchQuery.toLowerCase())
-              )}
-              keyExtractor={(item) => item._id}
-              keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.exerciseListItem, { borderBottomColor: colors.border }]}
-                  onPress={() => addExercise(item)}
-                >
-                  <Text style={[styles.exerciseListItemName, { color: colors.text }]}>{item.name}</Text>
-                  <Text style={[styles.exerciseListItemMeta, { color: colors.textSecondary }]}>{item.category} · {item.difficulty}</Text>
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary, padding: theme.spacing.lg }]}>No exercises found</Text>}
+              data={exercisesForSelectedDay}
+              keyExtractor={(item, index) => `${item.exerciseId}-${item.scheduleDay || 'single'}-${index}`}
+              renderItem={({ item, index }) => {
+                const actualIndex = exercisesForSelectedDay.findIndex(ex =>
+                  ex.exerciseId === item.exerciseId &&
+                  (scheduleType === '1-day' || ex.scheduleDay === item.scheduleDay)
+                );
+                return renderExerciseItem({ item, index: actualIndex });
+              }}
+              scrollEnabled={false}
             />
           )}
-        </KeyboardAvoidingView>
-      </Modal>
+        </View>
 
-      {/* Start Date Modal */}
-      <Modal
-        visible={showStartDateModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowStartDateModal(false)}
-      >
-        <View style={styles.calendarModalContainer}>
-          <View style={[styles.calendarModalContent, { backgroundColor: colors.surface }]}>
-            <View style={styles.calendarModalHeader}>
-              <Text style={[styles.calendarModalTitle, { color: colors.text }]}>Select Start Date</Text>
-              <TouchableOpacity onPress={() => setShowStartDateModal(false)}>
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Additional Notes</Text>
+          <TextInput
+            style={[styles.input, { height: 100, textAlignVertical: 'top', backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+            value={notes}
+            onChangeText={setNotes}
+            multiline
+            placeholder="Add any additional notes about this schedule..."
+            placeholderTextColor={colors.textSecondary}
+          />
+        </View>
+
+        <TouchableOpacity
+          onPress={onSave}
+          disabled={!canSave}
+          style={[styles.saveButton, !canSave && styles.saveButtonDisabled, { backgroundColor: colors.primary }]}
+        >
+          <Text style={[styles.saveButtonText, { color: colors.white }]}>{saving ? 'Creating...' : 'Create Schedule'}</Text>
+        </TouchableOpacity>
+
+        {/* Exercise Picker Modal */}
+        <Modal
+          visible={showExerciseModal}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowExerciseModal(false)}
+        >
+          <KeyboardAvoidingView
+            style={[styles.modalContainer, { backgroundColor: colors.background }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Select Exercise</Text>
+              <TouchableOpacity onPress={() => setShowExerciseModal(false)}>
                 <Ionicons name="close" size={28} color={colors.text} />
               </TouchableOpacity>
             </View>
-            <Calendar
-              onDayPress={(day) => {
-                setStartDate(day.dateString);
-                setShowStartDateModal(false);
-              }}
-              markedDates={startDate ? { [startDate]: { selected: true, selectedColor: colors.primary } } : {}}
-              minDate={new Date().toISOString().split('T')[0]}
-              theme={{
-                backgroundColor: colors.surface,
-                calendarBackground: colors.surface,
-                textSectionTitleColor: colors.text,
-                selectedDayBackgroundColor: colors.primary,
-                selectedDayTextColor: '#FFFFFF',
-                todayTextColor: colors.primary,
-                dayTextColor: colors.text,
-                textDisabledColor: colors.textSecondary,
-                dotColor: colors.primary,
-                selectedDotColor: '#FFFFFF',
-                arrowColor: colors.primary,
-                monthTextColor: colors.text,
-                textDayFontWeight: '400',
-                textMonthFontWeight: 'bold',
-                textDayHeaderFontWeight: '600',
-                textDayFontSize: 16,
-                textMonthFontSize: 18,
-                textDayHeaderFontSize: 14,
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
 
-      {/* End Date Modal */}
-      <Modal
-        visible={showEndDateModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowEndDateModal(false)}
-      >
-        <View style={styles.calendarModalContainer}>
-          <View style={[styles.calendarModalContent, { backgroundColor: colors.surface }]}>
-            <View style={styles.calendarModalHeader}>
-              <Text style={[styles.calendarModalTitle, { color: colors.text }]}>Select End Date</Text>
-              <TouchableOpacity onPress={() => setShowEndDateModal(false)}>
-                <Ionicons name="close" size={28} color={colors.text} />
-              </TouchableOpacity>
+            <View style={[styles.searchContainer, { borderBottomColor: colors.border }]}>
+              <View style={[styles.searchBar, { backgroundColor: colors.backgroundSecondary }]}>
+                <Ionicons name="search" size={20} color={colors.textSecondary} />
+                <TextInput
+                  style={[styles.searchInput, { color: colors.text }]}
+                  placeholder="Search exercises..."
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  autoCorrect={false}
+                  placeholderTextColor={colors.textSecondary}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')}>
+                    <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-            <Calendar
-              onDayPress={(day) => {
-                setEndDate(day.dateString);
-                setShowEndDateModal(false);
-              }}
-              markedDates={endDate ? { [endDate]: { selected: true, selectedColor: colors.primary } } : {}}
-              minDate={startDate || new Date().toISOString().split('T')[0]}
-              theme={{
-                backgroundColor: colors.surface,
-                calendarBackground: colors.surface,
-                textSectionTitleColor: colors.text,
-                selectedDayBackgroundColor: colors.primary,
-                selectedDayTextColor: '#FFFFFF',
-                todayTextColor: colors.primary,
-                dayTextColor: colors.text,
-                textDisabledColor: colors.textSecondary,
-                dotColor: colors.primary,
-                selectedDotColor: '#FFFFFF',
-                arrowColor: colors.primary,
-                monthTextColor: colors.text,
-                textDayFontWeight: '400',
-                textMonthFontWeight: 'bold',
-                textDayHeaderFontWeight: '600',
-                textDayFontSize: 16,
-                textMonthFontSize: 18,
-                textDayHeaderFontSize: 14,
-              }}
-            />
+
+            {loadingExercises ? (
+              <View style={styles.modalLoading}>
+                <Text style={{ color: colors.text }}>Loading exercises...</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={availableExercises.filter(item =>
+                  item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  item.category?.toLowerCase().includes(searchQuery.toLowerCase())
+                )}
+                keyExtractor={(item) => item._id}
+                keyboardShouldPersistTaps="handled"
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[styles.exerciseListItem, { borderBottomColor: colors.border }]}
+                    onPress={() => addExercise(item)}
+                  >
+                    <Text style={[styles.exerciseListItemName, { color: colors.text }]}>{item.name}</Text>
+                    <Text style={[styles.exerciseListItemMeta, { color: colors.textSecondary }]}>{item.category} · {item.difficulty}</Text>
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary, padding: theme.spacing.lg }]}>No exercises found</Text>}
+              />
+            )}
+          </KeyboardAvoidingView>
+        </Modal>
+
+        {/* Start Date Modal */}
+        <Modal
+          visible={showStartDateModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowStartDateModal(false)}
+        >
+          <View style={styles.calendarModalContainer}>
+            <View style={[styles.calendarModalContent, { backgroundColor: colors.surface }]}>
+              <View style={styles.calendarModalHeader}>
+                <Text style={[styles.calendarModalTitle, { color: colors.text }]}>Select Start Date</Text>
+                <TouchableOpacity onPress={() => setShowStartDateModal(false)}>
+                  <Ionicons name="close" size={28} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+              <Calendar
+                onDayPress={(day) => {
+                  setStartDate(day.dateString);
+                  setShowStartDateModal(false);
+                }}
+                markedDates={startDate ? { [startDate]: { selected: true, selectedColor: colors.primary } } : {}}
+                minDate={new Date().toISOString().split('T')[0]}
+                theme={{
+                  backgroundColor: colors.surface,
+                  calendarBackground: colors.surface,
+                  textSectionTitleColor: colors.text,
+                  selectedDayBackgroundColor: colors.primary,
+                  selectedDayTextColor: '#FFFFFF',
+                  todayTextColor: colors.primary,
+                  dayTextColor: colors.text,
+                  textDisabledColor: colors.textSecondary,
+                  dotColor: colors.primary,
+                  selectedDotColor: '#FFFFFF',
+                  arrowColor: colors.primary,
+                  monthTextColor: colors.text,
+                  textDayFontWeight: '400',
+                  textMonthFontWeight: 'bold',
+                  textDayHeaderFontWeight: '600',
+                  textDayFontSize: 16,
+                  textMonthFontSize: 18,
+                  textDayHeaderFontSize: 14,
+                }}
+              />
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+
+        {/* End Date Modal */}
+        <Modal
+          visible={showEndDateModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowEndDateModal(false)}
+        >
+          <View style={styles.calendarModalContainer}>
+            <View style={[styles.calendarModalContent, { backgroundColor: colors.surface }]}>
+              <View style={styles.calendarModalHeader}>
+                <Text style={[styles.calendarModalTitle, { color: colors.text }]}>Select End Date</Text>
+                <TouchableOpacity onPress={() => setShowEndDateModal(false)}>
+                  <Ionicons name="close" size={28} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+              <Calendar
+                onDayPress={(day) => {
+                  setEndDate(day.dateString);
+                  setShowEndDateModal(false);
+                }}
+                markedDates={endDate ? { [endDate]: { selected: true, selectedColor: colors.primary } } : {}}
+                minDate={startDate || new Date().toISOString().split('T')[0]}
+                theme={{
+                  backgroundColor: colors.surface,
+                  calendarBackground: colors.surface,
+                  textSectionTitleColor: colors.text,
+                  selectedDayBackgroundColor: colors.primary,
+                  selectedDayTextColor: '#FFFFFF',
+                  todayTextColor: colors.primary,
+                  dayTextColor: colors.text,
+                  textDisabledColor: colors.textSecondary,
+                  dotColor: colors.primary,
+                  selectedDotColor: '#FFFFFF',
+                  arrowColor: colors.primary,
+                  monthTextColor: colors.text,
+                  textDayFontWeight: '400',
+                  textMonthFontWeight: 'bold',
+                  textDayHeaderFontWeight: '600',
+                  textDayFontSize: 16,
+                  textMonthFontSize: 18,
+                  textDayHeaderFontSize: 14,
+                }}
+              />
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </KeyboardAvoidingView>
   );

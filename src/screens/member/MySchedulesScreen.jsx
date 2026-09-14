@@ -69,6 +69,8 @@ const MySchedulesScreen = () => {
       case 'beginner': return colors.success;
       case 'intermediate': return colors.warning;
       case 'advanced': return colors.error;
+      case 'warmup': return colors.info || '#0ea5e9';
+      case 'warmdown': return colors.primary;
       default: return colors.textSecondary;
     }
   };

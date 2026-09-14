@@ -11,7 +11,7 @@ import { instructorAPI } from '../../api/instructor.api';
 import KeyboardAvoidingWrapper from '../../components/common/KeyboardAvoidingWrapper';
 
 const SCHEDULE_TYPES = ['1-day', '2-day', '3-day'];
-const DIFFICULTY_OPTIONS = ['beginner', 'intermediate', 'advanced'];
+const DIFFICULTY_OPTIONS = ['beginner', 'intermediate', 'advanced', 'warmup', 'warmdown'];
 const GOAL_OPTIONS = ['Weight Loss', 'Muscle Building', 'Strength Training', 'Cardio Fitness', 'Flexibility', 'Endurance'];
 
 const CreateScheduleScreen = () => {

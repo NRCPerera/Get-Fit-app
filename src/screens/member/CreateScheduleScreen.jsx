@@ -10,7 +10,7 @@ import { scheduleAPI } from '../../api/schedule.api';
 import { exerciseAPI } from '../../api/exercise.api';
 
 const SCHEDULE_TYPES = ['1-day', '2-day', '3-day'];
-const DIFFICULTY_OPTIONS = ['beginner', 'intermediate', 'advanced'];
+const DIFFICULTY_OPTIONS = ['beginner', 'intermediate', 'advanced', 'warmup', 'warmdown'];
 const GOAL_OPTIONS = ['Weight Loss', 'Muscle Building', 'Strength Training', 'Cardio Fitness', 'Flexibility', 'Endurance'];
 
 // Approximate height of a bottom tab bar. If you know your exact tab bar

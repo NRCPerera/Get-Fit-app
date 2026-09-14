@@ -20,6 +20,8 @@ const getDifficultyColor = (difficulty, colors) => {
     case 'beginner': return colors.success;
     case 'intermediate': return colors.warning;
     case 'advanced': return colors.error;
+    case 'warmup': return colors.info || '#0ea5e9';
+    case 'warmdown': return colors.primary;
     default: return colors.textSecondary;
   }
 };
@@ -185,20 +187,6 @@ const ExerciseLibraryScreen = () => {
   }, [load]);
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
-  const getMuscleGroupIcon = (group) => {
-    switch (group) {
-      case 'chest': return 'body';
-      case 'back': return 'body';
-      case 'legs': return 'walk';
-      case 'arms': return 'hand-left';
-      case 'shoulders': return 'arrow-up';
-      case 'core': return 'ellipse';
-      case 'glutes': return 'fitness';
-      case 'full body': return 'accessibility';
-      default: return 'fitness';
-    }
-  };
-
   const muscleGroups = useMemo(() => {
     const groups = new Set();
     items.forEach((item) => {
@@ -208,11 +196,10 @@ const ExerciseLibraryScreen = () => {
     });
     const sorted = [...groups].sort();
     return [
-      { key: 'all', label: 'All', icon: 'grid' },
+      { key: 'all', label: 'All' },
       ...sorted.map((g) => ({
         key: g,
         label: g.charAt(0).toUpperCase() + g.slice(1),
-        icon: getMuscleGroupIcon(g),
       })),
     ];
   }, [items]);
@@ -382,13 +369,13 @@ const ExerciseLibraryScreen = () => {
                     colors={
                       isDark
                         ? [
-                            getDifficultyColor(item.difficulty, colors),
-                            getDifficultyColor(item.difficulty, colors) + 'AA',
-                          ]
+                          getDifficultyColor(item.difficulty, colors),
+                          getDifficultyColor(item.difficulty, colors) + 'AA',
+                        ]
                         : [
-                            getDifficultyColor(item.difficulty, colors),
-                            getDifficultyColor(item.difficulty, colors) + 'CC',
-                          ]
+                          getDifficultyColor(item.difficulty, colors),
+                          getDifficultyColor(item.difficulty, colors) + 'CC',
+                        ]
                     }
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
@@ -499,11 +486,6 @@ const ExerciseLibraryScreen = () => {
               onPress={() => setSelectedMuscleGroup(item.key)}
               activeOpacity={0.7}
             >
-              <Ionicons
-                name={item.icon}
-                size={14}
-                color={selectedMuscleGroup === item.key ? '#FFFFFF' : colors.primary}
-              />
               <Text
                 style={[
                   styles.muscleGroupText,

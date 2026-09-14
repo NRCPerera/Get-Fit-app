@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Sta
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
 import { paymentAPI } from '../../api/payment.api';
@@ -134,12 +134,9 @@ const PaymentHistoryScreen = () => {
     <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
-      {/* Gradient Header */}
-      <LinearGradient
-        colors={colors.gradients.primary}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.headerGradient, { paddingTop: insets.top + 10 }]}
+      {/* Header */}
+      <View
+        style={[styles.headerGradient, { paddingTop: insets.top + 10, backgroundColor: colors.primary }]}
       >
         {/* Decorative circles */}
         <View style={styles.headerCircle1} />
@@ -175,7 +172,7 @@ const PaymentHistoryScreen = () => {
             <Text style={styles.statLabel}>Pending</Text>
           </View>
         </View>
-      </LinearGradient>
+      </View>
 
       {/* Filter Tabs */}
       <View style={[styles.filterContainer, { backgroundColor: colors.background }]}>

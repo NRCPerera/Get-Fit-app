@@ -23,6 +23,8 @@ export const EXERCISE_DIFFICULTY = {
   BEGINNER: 'beginner',
   INTERMEDIATE: 'intermediate',
   ADVANCED: 'advanced',
+  WARMUP: 'warmup',
+  WARMDOWN: 'warmdown',
 };
 
 // Muscle Groups

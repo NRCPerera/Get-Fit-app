@@ -1,87 +1,93 @@
 /**
  * Light Theme Colors
  * 
- * This file defines all color values for the light theme.
+ * Indigo brand, desaturated semantic status palette.
  * Import these colors via ThemeContext, never directly.
  */
 
 // Core Color Palette
 const palette = {
-  // Primary - Deep Red
-  red: {
-    50: '#FEF2F2',
-    100: '#FEE2E2',
-    200: '#FECACA',
-    300: '#FCA5A5',
-    400: '#F87171',
-    500: '#DC2626',
-    600: '#B91C1C',
-    700: '#991B1B',
-    800: '#7F1D1D',
-    900: '#450A0A',
+  // Brand — Indigo
+  indigo: {
+    50: '#EEF2FF',
+    100: '#E0E7FF',
+    200: '#C7D2FE',
+    300: '#A5B4FC',
+    400: '#818CF8',
+    500: '#5B5FEF',
+    600: '#4F46E5',
+    700: '#4338CA',
+    800: '#3730A3',
+    900: '#312E81',
   },
-  // Accent - Gold
-  gold: {
-    50: '#FFFBEB',
-    100: '#FEF3C7',
-    200: '#FDE68A',
-    300: '#FCD34D',
-    400: '#FBBF24',
-    500: '#D4AF37',
-    600: '#B8860B',
-    700: '#92400E',
-    800: '#78350F',
-    900: '#451A03',
+  // Accent — Violet
+  violet: {
+    50: '#F5F3FF',
+    100: '#EDE9FE',
+    200: '#DDD6FE',
+    300: '#C4B5FD',
+    400: '#A78BFA',
+    500: '#8B5CF6',
+    600: '#7C3AED',
+    700: '#6D28D9',
+    800: '#5B21B6',
+    900: '#4C1D95',
   },
-  // Neutrals
-  black: '#000000',
+  // Neutrals — slightly cool
   white: '#FFFFFF',
+  black: '#000000',
   gray: {
-    50: '#FAFAFA',
-    100: '#F5F5F5',
-    200: '#E5E5E5',
-    300: '#D4D4D4',
-    400: '#A3A3A3',
-    500: '#737373',
-    600: '#525252',
-    700: '#404040',
-    800: '#262626',
-    900: '#171717',
-    950: '#0A0A0A',
+    50: '#F9FAFB',
+    100: '#EEF0F5',
+    200: '#E3E5EC',
+    300: '#D1D5DB',
+    400: '#9CA3AF',
+    500: '#6B7280',
+    600: '#4B5563',
+    700: '#374151',
+    800: '#1F2937',
+    900: '#1A1D29',
+    950: '#0F1117',
   },
 };
 
 // Light Mode Color Tokens
 export const lightColors = {
   // Brand Colors
-  primary: palette.red[400],
-  primaryDark: palette.red[500],
-  primaryLight: palette.red[300],
+  primary: palette.indigo[500],
+  primaryDark: palette.indigo[600],
+  primaryLight: palette.violet[500],
 
-  // Accent - Gold
-  secondary: palette.gold[500],
-  secondaryDark: palette.gold[600],
-  secondaryLight: palette.gold[400],
+  // Accent — Violet
+  secondary: palette.violet[600],
+  secondaryDark: palette.violet[700],
+  secondaryLight: palette.violet[400],
 
-  // Functional Colors
-  success: '#10B981',
-  successDark: '#059669',
-  error: palette.red[400],
-  errorDark: palette.red[500],
-  warning: palette.gold[500],
-  warningDark: palette.gold[600],
-  info: '#3B82F6',
-  infoDark: '#2563EB',
-  danger: palette.red[500],
+  // Functional Colors — desaturated, WCAG-safe on their respective Bg tokens
+  success: '#0F766E',
+  successDark: '#0D6B63',
+  error: '#B91C1C',
+  errorDark: '#991B1B',
+  warning: '#B45309',
+  warningDark: '#92400E',
+  info: '#1D4ED8',
+  infoDark: '#1E40AF',
+  danger: '#B91C1C',
 
-  // Backgrounds
-  background: palette.white,
-  backgroundSecondary: palette.gray[100],
-  backgroundTertiary: palette.gray[200],
+  // Semantic status backgrounds (tinted surfaces for badges / cards)
+  successBg: '#ECFDF5',
+  warningBg: '#FFFBEB',
+  errorBg: '#FEF2F2',
+  infoBg: '#EFF6FF',
 
-  // Text
+  // Backgrounds — cool off-white, never pure white
+  background: palette.gray[100],
+  backgroundSecondary: palette.gray[200],
+  backgroundTertiary: palette.gray[300],
+
+  // Text — dark cool gray, never pure black
   text: palette.gray[900],
-  textSecondary: palette.gray[600],
+  textSecondary: palette.gray[500],
   textTertiary: palette.gray[400],
   textDisabled: palette.gray[300],
   textInverse: palette.white,
@@ -95,19 +101,19 @@ export const lightColors = {
   surface: palette.white,
 
   // Interactive states
-  ripple: 'rgba(0, 0, 0, 0.1)',
+  ripple: 'rgba(0, 0, 0, 0.08)',
   overlay: 'rgba(0, 0, 0, 0.5)',
 
-  // Gradients
+  // Gradients (kept for backward compatibility; headers should use flat fills)
   gradients: {
-    primary: [palette.red[500], palette.red[600], palette.red[700]],
-    secondary: [palette.gold[400], palette.gold[500], palette.gold[600]],
-    success: ['#10B981', '#059669'],
-    dark: [palette.gray[800], palette.gray[900]],
-    warm: [palette.gold[400], palette.gold[500]],
-    blue: ['#3B82F6', '#2563EB'],
-    premium: [palette.red[600], palette.gold[500]],
-    heroGradient: [palette.red[500], palette.black],
+    primary: [palette.indigo[500], palette.indigo[600], palette.indigo[700]],
+    secondary: [palette.violet[600], palette.violet[700], palette.violet[800]],
+    success: ['#0F766E', '#0D6B63'],
+    dark: [palette.gray[700], palette.gray[800]],
+    warm: ['#B45309', '#92400E'],
+    blue: ['#1D4ED8', '#1E40AF'],
+    premium: [palette.indigo[500], palette.violet[600]],
+    heroGradient: [palette.indigo[500], palette.gray[900]],
   },
 
   // Legacy support

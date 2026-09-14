@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, D
 import { useSelector, useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Notifications from 'expo-notifications';
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
@@ -41,7 +40,7 @@ const HomeScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [unreadMessages, setUnreadMessages] = useState(0);
-  const [customWorkouts, setCustomWorkouts] = useState({ beginner: [], intermediate: [], advanced: [] });
+  const [customWorkouts, setCustomWorkouts] = useState({ beginner: [], intermediate: [], advanced: [], warmup: [], warmdown: [] });
   const appState = useRef(AppState.currentState);
 
   // Fetch unread message count
@@ -77,14 +76,23 @@ const HomeScreen = () => {
 
       // Set workouts from API response
       if (workoutsRes?.data?.grouped) {
-        setCustomWorkouts(workoutsRes.data.grouped);
+        const g = workoutsRes.data.grouped;
+        setCustomWorkouts({
+          beginner: g.beginner || [],
+          intermediate: g.intermediate || [],
+          advanced: g.advanced || [],
+          warmup: g.warmup || [],
+          warmdown: g.warmdown || [],
+        });
       } else if (workoutsRes?.data?.items) {
         // Fallback: group workouts manually if grouped is not provided
         const items = workoutsRes.data.items;
         setCustomWorkouts({
           beginner: items.filter(w => w.difficulty === 'beginner'),
           intermediate: items.filter(w => w.difficulty === 'intermediate'),
-          advanced: items.filter(w => w.difficulty === 'advanced')
+          advanced: items.filter(w => w.difficulty === 'advanced'),
+          warmup: items.filter(w => w.difficulty === 'warmup'),
+          warmdown: items.filter(w => w.difficulty === 'warmdown')
         });
       }
 
@@ -161,6 +169,8 @@ const HomeScreen = () => {
       case 'beginner': return colors.success;
       case 'intermediate': return colors.warning;
       case 'advanced': return colors.error;
+      case 'warmup': return colors.info || '#0ea5e9';
+      case 'warmdown': return colors.primary;
       default: return colors.textSecondary;
     }
   };
@@ -174,29 +184,26 @@ const HomeScreen = () => {
       style={styles.planCardContainer}
       onPress={() => handleWorkoutPress(plan)}
     >
-      <LinearGradient
-        colors={[colors.background, colors.backgroundSecondary]}
-        style={[styles.planCard, { borderColor: colors.border }]}
-      >
+      <View style={[styles.planCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.planHeader}>
-          <View style={[styles.planIcon, { backgroundColor: colors.primary + '15' }]}>
+          <View style={[styles.planIcon, { backgroundColor: colors.primary + '12' }]}>
             <Ionicons name="fitness" size={24} color={colors.primary} />
           </View>
-          <View style={[styles.planBadge, { backgroundColor: colors.primary + '20' }]}>
-            <Text style={[styles.planBadgeText, { color: colors.primary }]}>{plan.duration}</Text>
+          <View style={[styles.planBadge, { backgroundColor: colors.infoBg }]}>
+            <Text style={[styles.planBadgeText, { color: colors.info }]}>{plan.duration}</Text>
           </View>
         </View>
         <Text style={[styles.planName, { color: colors.text }]}>{plan.name}</Text>
         <Text style={[styles.planDesc, { color: colors.textSecondary }]} numberOfLines={2}>{plan.description}</Text>
         <View style={styles.planFooter}>
           <Text style={[styles.planWorkouts, { color: colors.textSecondary }]}>{plan.workoutsPerWeek}</Text>
-          <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(plan.difficulty) + '20' }]}>
+          <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(plan.difficulty) + '15' }]}>
             <Text style={[styles.difficultyBadgeText, { color: getDifficultyColor(plan.difficulty) }]}>
               {plan.difficulty.charAt(0).toUpperCase() + plan.difficulty.slice(1)}
             </Text>
           </View>
         </View>
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 
@@ -207,7 +214,8 @@ const HomeScreen = () => {
       value: activeMembership ? 'Active' : 'Inactive',
       subValue: activePlanName,
       icon: 'sparkles',
-      gradient: theme.colors.gradients.primary,
+      accentColor: activeMembership ? colors.success : colors.warning,
+      accentBg: activeMembership ? (colors.successBg || colors.success + '15') : (colors.warningBg || colors.warning + '15'),
       action: () => navigation.navigate('MembershipPlans'),
     },
     {
@@ -216,7 +224,8 @@ const HomeScreen = () => {
       value: schedules.length.toString(),
       subValue: 'Upcoming',
       icon: 'calendar',
-      gradient: theme.colors.gradients.blue,
+      accentColor: colors.info,
+      accentBg: colors.infoBg || colors.info + '15',
       action: () => navigation.navigate('Schedules'),
     },
     {
@@ -225,7 +234,8 @@ const HomeScreen = () => {
       value: payments.length.toString(),
       subValue: 'Transactions',
       icon: 'wallet',
-      gradient: theme.colors.gradients.secondary,
+      accentColor: colors.primary,
+      accentBg: colors.primary + '12',
       action: () => navigation.navigate('Instructors', { screen: 'PaymentHistory' }),
     },
     {
@@ -234,7 +244,8 @@ const HomeScreen = () => {
       value: '85%',
       subValue: 'Weekly Goal',
       icon: 'trending-up',
-      gradient: theme.colors.gradients.warm,
+      accentColor: colors.success,
+      accentBg: colors.successBg || colors.success + '15',
       action: () => navigation.navigate('ProgressTracking'),
     }
   ];
@@ -243,18 +254,11 @@ const HomeScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle="light-content" />
 
-      {/* Decorative Background */}
+      {/* Flat Brand Header Background */}
       <View style={styles.bgDecoration}>
-        <LinearGradient
-          colors={isDark ? [colors.primary, colors.background] : [colors.primary, colors.background]}
-          style={styles.bgGradient}
-          start={{ x: 1, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        />
-        <View style={[styles.bgCircle1, { backgroundColor: colors.primaryLight + '30' }]} />
-        <View style={[styles.bgCircle2, { backgroundColor: colors.secondary + '20' }]} />
+        <View style={[styles.bgGradient, { backgroundColor: colors.primary }]} />
       </View>
 
       <ScrollView
@@ -276,7 +280,7 @@ const HomeScreen = () => {
             >
               <Ionicons name="chatbubbles" size={22} color="#fff" />
               {unreadMessages > 0 && (
-                <View style={styles.messageBadge}>
+                <View style={[styles.messageBadge, { backgroundColor: colors.error, borderColor: colors.primary }]}>
                   <Text style={styles.messageBadgeText}>
                     {unreadMessages > 99 ? '99+' : unreadMessages}
                   </Text>
@@ -288,12 +292,12 @@ const HomeScreen = () => {
               onPress={() => navigation.navigate('Notifications')}
             >
               <Ionicons name="notifications" size={24} color="#fff" />
-              <View style={styles.notificationDot} />
+              <View style={[styles.notificationDot, { backgroundColor: colors.error, borderColor: colors.primary }]} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Dashboard Grid */}
+        {/* Dashboard Grid — Flat Cards with Semantic Colors */}
         <View style={styles.gridContainer}>
           {quickStats.map((stat) => (
             <TouchableOpacity
@@ -302,57 +306,56 @@ const HomeScreen = () => {
               style={styles.gridItemWrapper}
               onPress={stat.action}
             >
-              <LinearGradient
-                colors={stat.gradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.gridItem}
-              >
-                <View style={styles.gridIcon}>
-                  <Ionicons name={stat.icon} size={24} color="#fff" />
+              <View style={[styles.gridItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.gridIcon, { backgroundColor: stat.accentBg }]}>
+                  <Ionicons name={stat.icon} size={24} color={stat.accentColor} />
                 </View>
                 <View>
-                  <Text style={styles.gridValue}>{stat.value}</Text>
-                  <Text style={styles.gridLabel}>{stat.label}</Text>
-                  <Text style={styles.gridSub}>{stat.subValue}</Text>
+                  <Text style={[styles.gridValue, { color: stat.accentColor }]}>{stat.value}</Text>
+                  <Text style={[styles.gridLabel, { color: colors.text }]}>{stat.label}</Text>
+                  <Text style={[styles.gridSub, { color: colors.textSecondary }]}>{stat.subValue}</Text>
                 </View>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Main Content Area */}
-        <View style={styles.mainContent}>
-          {/* Active Subscription Banner */}
+        <View style={[styles.mainContent, { backgroundColor: colors.background }]}>
+          {/* Active Subscription Banner — Flat, Semantic */}
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={() => navigation.navigate('MembershipPlans')}
           >
-            <LinearGradient
-              colors={activeMembership ? theme.colors.gradients.success : ['#374151', '#111827']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.membershipBanner}
+            <View
+              style={[
+                styles.membershipBanner,
+                {
+                  backgroundColor: activeMembership ? (colors.successBg || colors.success + '10') : (colors.warningBg || colors.warning + '10'),
+                  borderWidth: 1,
+                  borderColor: activeMembership ? colors.success + '30' : colors.warning + '30',
+                },
+              ]}
             >
               <View style={styles.bannerContent}>
                 <View>
-                  <Text style={styles.bannerLabel}>Current Plan</Text>
-                  <Text style={styles.bannerTitle}>{activePlanName}</Text>
-                  <Text style={styles.bannerDate}>
+                  <Text style={[styles.bannerLabel, { color: colors.textSecondary }]}>Current Plan</Text>
+                  <Text style={[styles.bannerTitle, { color: colors.text }]}>{activePlanName}</Text>
+                  <Text style={[styles.bannerDate, { color: colors.textSecondary }]}>
                     {activeMembership
                       ? `Renews ${formatDate(new Date(activeMembership.endDate), 'MMM dd')}`
                       : 'Tap to view membership options'}
                   </Text>
                 </View>
-                <View style={styles.bannerIcon}>
+                <View style={[styles.bannerIcon, { backgroundColor: activeMembership ? colors.success + '15' : colors.warning + '15' }]}>
                   <Ionicons
                     name={activeMembership ? "shield-checkmark" : "shield-outline"}
                     size={32}
-                    color="#fff"
+                    color={activeMembership ? colors.success : colors.warning}
                   />
                 </View>
               </View>
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
 
           {/* Upcoming Workout Section */}
@@ -368,15 +371,15 @@ const HomeScreen = () => {
               upcomingSchedules.map((schedule, index) => (
                 <TouchableOpacity
                   key={schedule._id || index}
-                  style={[styles.scheduleItem, { backgroundColor: colors.surface }]}
+                  style={[styles.scheduleItem, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => navigation.navigate('Schedules', { screen: 'ScheduleDetail', params: { id: schedule._id, fromHome: true } })}
                 >
                   <View style={styles.scheduleLeft}>
-                    <View style={[styles.scheduleTimeBox, { backgroundColor: colors.primary + '15' }]}>
-                      <Text style={[styles.scheduleDay, { color: colors.primary }]}>
+                    <View style={[styles.scheduleTimeBox, { backgroundColor: colors.infoBg || colors.info + '12' }]}>
+                      <Text style={[styles.scheduleDay, { color: colors.info }]}>
                         {schedule.startDate ? new Date(schedule.startDate).getDate() : 'Today'}
                       </Text>
-                      <Text style={[styles.scheduleMonth, { color: colors.primary }]}>
+                      <Text style={[styles.scheduleMonth, { color: colors.info }]}>
                         {schedule.startDate ? new Date(schedule.startDate).toLocaleString('default', { month: 'short' }) : 'Now'}
                       </Text>
                     </View>
@@ -391,7 +394,7 @@ const HomeScreen = () => {
                 </TouchableOpacity>
               ))
             ) : (
-              <View style={[styles.emptySchedule, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+              <View style={[styles.emptySchedule, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="calendar-outline" size={40} color={colors.textTertiary} />
                 <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No upcoming workouts</Text>
                 <Button
@@ -408,18 +411,20 @@ const HomeScreen = () => {
           {/* Recommended Plans Horizontal Scroll */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>For You</Text>
-            {(customWorkouts.beginner.length > 0 || customWorkouts.intermediate.length > 0 || customWorkouts.advanced.length > 0) ? (
+            {((customWorkouts.beginner?.length > 0) || (customWorkouts.intermediate?.length > 0) || (customWorkouts.advanced?.length > 0) || (customWorkouts.warmup?.length > 0) || (customWorkouts.warmdown?.length > 0)) ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.hScroll}
               >
-                {customWorkouts.beginner.map(renderPlanCard)}
-                {customWorkouts.intermediate.map(renderPlanCard)}
-                {customWorkouts.advanced.map(renderPlanCard)}
+                {(customWorkouts.warmup || []).map(renderPlanCard)}
+                {(customWorkouts.beginner || []).map(renderPlanCard)}
+                {(customWorkouts.intermediate || []).map(renderPlanCard)}
+                {(customWorkouts.advanced || []).map(renderPlanCard)}
+                {(customWorkouts.warmdown || []).map(renderPlanCard)}
               </ScrollView>
             ) : (
-              <View style={[styles.emptySchedule, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+              <View style={[styles.emptySchedule, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="fitness-outline" size={40} color={colors.textTertiary} />
                 <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No workout programs available yet</Text>
               </View>
@@ -434,7 +439,6 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.backgroundSecondary,
   },
   bgDecoration: {
     position: 'absolute',
@@ -446,24 +450,6 @@ const styles = StyleSheet.create({
   },
   bgGradient: {
     flex: 1,
-  },
-  bgCircle1: {
-    position: 'absolute',
-    top: -100,
-    right: -50,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  bgCircle2: {
-    position: 'absolute',
-    top: 50,
-    left: -100,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   scrollView: {
     flex: 1,
@@ -488,7 +474,7 @@ const styles = StyleSheet.create({
   },
   subGreeting: {
     fontSize: 14,
-    color: 'rgba(118, 69, 69, 0.8)',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 4,
   },
   headerActions: {
@@ -498,12 +484,12 @@ const styles = StyleSheet.create({
   notificationBtn: {
     width: 48,
     height: 48,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   notificationDot: {
     position: 'absolute',
@@ -545,42 +531,42 @@ const styles = StyleSheet.create({
   },
   gridItem: {
     padding: 16,
-    borderRadius: 24,
+    borderRadius: 20,
     height: 160,
     justifyContent: 'space-between',
-    // shadowColor applied inline
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 8,
+    borderWidth: 1,
+    // borderColor applied inline
+    shadowColor: '#1A1D29',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
   gridIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   gridValue: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#fff',
+    // color applied inline (semantic accent)
     marginBottom: 2,
   },
   gridLabel: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.9)',
+    // color applied inline
     fontWeight: '600',
     textTransform: 'uppercase',
   },
   gridSub: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
+    // color applied inline
     marginTop: 2,
   },
   mainContent: {
-    // backgroundColor applied inline
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 20,
@@ -588,14 +574,9 @@ const styles = StyleSheet.create({
   },
   membershipBanner: {
     padding: 24,
-    borderRadius: 24,
+    borderRadius: 20,
     marginTop: 10,
     marginBottom: 30,
-    // shadowColor applied inline
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 10,
   },
   bannerContent: {
     flexDirection: 'row',
@@ -603,27 +584,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bannerLabel: {
-    color: 'rgba(255,255,255,0.8)',
+    // color applied inline
     fontSize: 12,
     textTransform: 'uppercase',
     fontWeight: '600',
     marginBottom: 4,
   },
   bannerTitle: {
-    color: '#fff',
+    // color applied inline
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 8,
   },
   bannerDate: {
-    color: 'rgba(255,255,255,0.9)',
+    // color applied inline
     fontSize: 14,
   },
   bannerIcon: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    // backgroundColor applied inline
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -647,18 +628,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   scheduleItem: {
-    backgroundColor: '#fff',
+    // backgroundColor applied inline
     padding: 16,
     borderRadius: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    // borderColor applied inline
+    shadowColor: '#1A1D29',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
   scheduleLeft: {
     flexDirection: 'row',
@@ -715,7 +698,7 @@ const styles = StyleSheet.create({
   },
   planCard: {
     padding: 20,
-    borderRadius: 24,
+    borderRadius: 20,
     height: 220,
     justifyContent: 'space-between',
     borderWidth: 1,
@@ -764,10 +747,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     // color applied inline
   },
-  difficulyBadge: {
-    paddinHorizontal: 8,
-    paddigVertical: 4,
-    bordeRadius: 8,
+  difficultyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   difficultyBadgeText: {
     fontSize: 10,

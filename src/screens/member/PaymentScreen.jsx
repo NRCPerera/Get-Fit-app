@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking, A
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
 import { paymentAPI } from '../../api/payment.api';
@@ -130,12 +130,9 @@ const PaymentScreen = () => {
     <View style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
-      {/* Gradient Header */}
-      <LinearGradient
-        colors={colors.gradients.primary}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.headerGradient, { paddingTop: insets.top + 10 }]}
+      {/* Header */}
+      <View
+        style={[styles.headerGradient, { paddingTop: insets.top + (Platform.OS === 'ios' ? 20 : 10), backgroundColor: colors.primary }]}
       >
         {/* Decorative circles */}
         <View style={styles.headerCircle1} />
@@ -155,11 +152,11 @@ const PaymentScreen = () => {
         {/* Payment Icon */}
         <View style={styles.headerIconContainer}>
           <View style={styles.headerIcon}>
-            <Ionicons name="card" size={40} color="#DC2626" />
+            <Ionicons name="card" size={40} color={colors.primary} />
           </View>
           <Text style={styles.headerIconText}>Secure Payment</Text>
         </View>
-      </LinearGradient>
+      </View>
 
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
@@ -221,7 +218,7 @@ const PaymentScreen = () => {
 
             <View style={styles.infoBox}>
               <View style={styles.infoIconContainer}>
-                <Ionicons name="information-circle" size={20} color="#DC2626" />
+                <Ionicons name="information-circle" size={20} color={colors.primary} />
               </View>
               <Text style={[styles.infoText, { color: colors.text }]}>
                 You will be redirected to PayHere's secure payment page to complete your transaction.

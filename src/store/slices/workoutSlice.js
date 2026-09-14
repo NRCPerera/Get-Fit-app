@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { workoutAPI } from '../../api/workout.api';
 
 const initialState = {
-  workouts: { beginner: [], intermediate: [], advanced: [] },
+  workouts: { beginner: [], intermediate: [], advanced: [], warmup: [], warmdown: [] },
   loading: false,
   error: null,
 };
@@ -15,7 +15,14 @@ export const fetchWorkouts = createAsyncThunk(
       const payload = res?.data || res;
       // Handle grouped response
       if (payload?.grouped) {
-        return payload.grouped;
+        const g = payload.grouped;
+        return {
+          beginner: g.beginner || [],
+          intermediate: g.intermediate || [],
+          advanced: g.advanced || [],
+          warmup: g.warmup || [],
+          warmdown: g.warmdown || [],
+        };
       }
       // Handle items array and group by difficulty
       if (payload?.items && Array.isArray(payload.items)) {
@@ -23,9 +30,11 @@ export const fetchWorkouts = createAsyncThunk(
           beginner: payload.items.filter(w => w.difficulty === 'beginner'),
           intermediate: payload.items.filter(w => w.difficulty === 'intermediate'),
           advanced: payload.items.filter(w => w.difficulty === 'advanced'),
+          warmup: payload.items.filter(w => w.difficulty === 'warmup'),
+          warmdown: payload.items.filter(w => w.difficulty === 'warmdown'),
         };
       }
-      return payload || { beginner: [], intermediate: [], advanced: [] };
+      return payload || { beginner: [], intermediate: [], advanced: [], warmup: [], warmdown: [] };
     } catch (error) {
       const errorMessage = error?.response?.data?.message ||
         error?.response?.data?.error ||

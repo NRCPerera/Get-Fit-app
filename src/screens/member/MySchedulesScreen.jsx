@@ -193,7 +193,7 @@ const MySchedulesScreen = () => {
               <Text style={[styles.emptyText, { color: colors.text }]}>No Schedules Yet</Text>
               <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Create your first training schedule to get started</Text>
               <TouchableOpacity
-                style={styles.emptyButton}
+                style={[styles.emptyButton, { backgroundColor: colors.primary }]}
                 onPress={() => navigation.navigate('CreateSchedule')}
                 activeOpacity={0.7}
               >

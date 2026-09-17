@@ -453,14 +453,14 @@ const CreateScheduleScreen = () => {
           </View>
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text }]}>Difficulty</Text>
-            <View style={styles.optionRow}>
+            <View style={styles.goalsContainer}>
               {DIFFICULTY_OPTIONS.map(opt => (
                 <TouchableOpacity
                   key={opt}
-                  style={[styles.optionButton, { backgroundColor: colors.backgroundSecondary }, difficulty === opt && [styles.optionButtonActive, { backgroundColor: colors.primary }]]}
+                  style={[styles.goalButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }, difficulty === opt && [styles.goalButtonActive, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]]}
                   onPress={() => setDifficulty(difficulty === opt ? '' : opt)}
                 >
-                  <Text style={[styles.optionText, { color: colors.textSecondary }, difficulty === opt && [styles.optionTextActive, { color: colors.white }]]}>
+                  <Text style={[styles.goalText, { color: colors.text }, difficulty === opt && [styles.goalTextActive, { color: colors.primary }]]}>
                     {opt.charAt(0).toUpperCase() + opt.slice(1)}
                   </Text>
                 </TouchableOpacity>

@@ -1,37 +1,50 @@
 /**
  * Dark Theme Colors
  * 
- * Indigo brand, desaturated semantic status palette — dark mode.
+ * GetFit Blue + Purple + Cyan brand and semantic status palette — dark mode.
  * Import these colors via ThemeContext, never directly.
  */
 
 // Core Color Palette (shared with light theme)
 const palette = {
-  // Brand — Indigo
-  indigo: {
-    50: '#EEF2FF',
-    100: '#E0E7FF',
-    200: '#C7D2FE',
-    300: '#A5B4FC',
-    400: '#818CF8',
-    500: '#7C7FFF',
-    600: '#4F46E5',
-    700: '#4338CA',
-    800: '#3730A3',
-    900: '#312E81',
+  // Brand — Blue (brighter variants for dark backgrounds)
+  blue: {
+    50: '#EFF6FF',
+    100: '#DBEAFE',
+    200: '#BFDBFE',
+    300: '#93C5FD',
+    400: '#60A5FA',
+    500: '#3B82F6',
+    600: '#2563EB',
+    700: '#1D4ED8',
+    800: '#1E40AF',
+    900: '#1E3A8A',
   },
-  // Accent — Violet
-  violet: {
+  // Secondary — Purple
+  purple: {
     50: '#F5F3FF',
     100: '#EDE9FE',
     200: '#DDD6FE',
     300: '#C4B5FD',
     400: '#A78BFA',
-    500: '#9F7AEA',
+    500: '#8B5CF6',
     600: '#7C3AED',
     700: '#6D28D9',
     800: '#5B21B6',
     900: '#4C1D95',
+  },
+  // Accent — Cyan
+  cyan: {
+    50: '#ECFEFF',
+    100: '#CFFAFE',
+    200: '#A5F3FC',
+    300: '#67E8F9',
+    400: '#22D3EE',
+    500: '#06B6D4',
+    600: '#0891B2',
+    700: '#0E7490',
+    800: '#155E75',
+    900: '#164E63',
   },
   // Neutrals — cool dark
   white: '#FFFFFF',
@@ -45,75 +58,87 @@ const palette = {
     500: '#6B7280',
     600: '#4B5563',
     700: '#374151',
-    800: '#1B1E27',
-    900: '#0F1117',
-    950: '#0A0C12',
+    800: '#1F2937',
+    900: '#111827',
+    950: '#0B1020',
   },
 };
 
 // Dark Mode Color Tokens
 export const darkColors = {
   // Brand Colors — lighter for dark backgrounds
-  primary: palette.indigo[500],
-  primaryDark: palette.indigo[600],
-  primaryLight: palette.violet[400],
+  primary: palette.blue[500],
+  primaryDark: palette.blue[600],
+  primaryLight: palette.blue[300],
 
-  // Accent — Violet
-  secondary: palette.violet[500],
-  secondaryDark: palette.violet[600],
-  secondaryLight: palette.violet[300],
+  // Secondary — Purple
+  secondary: palette.purple[500],
+  secondaryDark: palette.purple[600],
+  secondaryLight: palette.purple[300],
+
+  // Accent — Cyan
+  accent: palette.cyan[400],
+  accentDark: palette.cyan[500],
+  accentLight: palette.cyan[200],
+
+  accentGradient: [palette.blue[600], palette.purple[600], palette.cyan[500]],
+  shimmer: '#FFFFFF12',
+  glow: palette.blue[500],
+  glass: '#111827EB',
+  glassBorder: '#FFFFFF20',
+  onPrimary: '#FFFFFF',
 
   // Functional Colors — brighter on dark backgrounds for readability
-  success: '#2DD4BF',
-  successDark: '#14B8A6',
+  success: '#34D399',
+  successDark: '#10B981',
   error: '#F87171',
   errorDark: '#EF4444',
   warning: '#FBBF24',
   warningDark: '#F59E0B',
-  info: '#60A5FA',
-  infoDark: '#3B82F6',
+  info: palette.blue[400],
+  infoDark: palette.blue[500],
   danger: '#F87171',
 
   // Semantic status backgrounds (dark tinted surfaces)
-  successBg: '#0F2A26',
+  successBg: '#052E16',
   warningBg: '#2A2110',
   errorBg: '#2A1414',
-  infoBg: '#132238',
+  infoBg: '#0C1E3D',
 
-  // Backgrounds — cool off-black, never pure black
-  background: palette.gray[900],
-  backgroundSecondary: palette.gray[800],
-  backgroundTertiary: palette.gray[700],
+  // Backgrounds — premium dark navy, never pure black
+  background: palette.gray[950],
+  backgroundSecondary: palette.gray[900],
+  backgroundTertiary: palette.gray[800],
 
   // Text — off-white, never pure white
-  text: '#F3F4F6',
-  textSecondary: palette.gray[400],
-  textTertiary: palette.gray[500],
+  text: '#F9FAFB',
+  textSecondary: '#CBD5E1',
+  textTertiary: '#94A3B8',
   textDisabled: palette.gray[600],
   textInverse: palette.gray[900],
 
   // UI Elements
-  border: '#262A36',
-  borderLight: '#1F2330',
-  divider: '#262A36',
+  border: '#334155',
+  borderLight: '#1E293B',
+  divider: '#334155',
   card: palette.gray[800],
-  cardElevated: palette.gray[700],
-  surface: palette.gray[800],
+  cardElevated: '#243044',
+  surface: palette.gray[900],
 
   // Interactive states
-  ripple: 'rgba(255, 255, 255, 0.08)',
+  ripple: 'rgba(59, 130, 246, 0.12)',
   overlay: 'rgba(0, 0, 0, 0.7)',
 
-  // Gradients (kept for backward compatibility; headers should use flat fills)
+  // Gradients (kept for backward compatibility; shared across headers and controls)
   gradients: {
-    primary: [palette.indigo[600], palette.indigo[700], palette.indigo[800]],
-    secondary: [palette.violet[600], palette.violet[700], palette.violet[800]],
-    success: ['#14B8A6', '#0F766E'],
+    primary: [palette.blue[600], palette.blue[700], palette.blue[800]],
+    secondary: [palette.purple[600], palette.purple[700]],
+    success: ['#10B981', '#059669'],
     dark: [palette.gray[900], palette.gray[950]],
-    warm: ['#F59E0B', '#D97706'],
-    blue: ['#3B82F6', '#2563EB'],
-    premium: [palette.indigo[600], palette.violet[700]],
-    heroGradient: [palette.indigo[600], palette.gray[950]],
+    warm: [palette.cyan[400], palette.cyan[500]],
+    blue: [palette.blue[500], palette.blue[600]],
+    premium: [palette.blue[700], palette.purple[700]],
+    heroGradient: [palette.blue[700], palette.gray[950]],
   },
 
   // Legacy support

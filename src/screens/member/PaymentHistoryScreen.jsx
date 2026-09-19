@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterButtonActive: {
-    backgroundColor: '#DC2626',
+    backgroundColor: theme.colors.primary,
   },
   filterText: {
     fontSize: 13,
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   cardAmount: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#DC2626',
+    color: theme.colors.primary,
     letterSpacing: -0.3,
   },
   cardBottom: {

@@ -1,5 +1,6 @@
+import { ScaleTouchable as TouchableOpacity, MotionView, FocusSurface } from '../../components/common/Motion';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, Image, StatusBar, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, Image, StatusBar, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -84,7 +85,7 @@ const InstructorListScreen = () => {
         style={styles.instructorCard}
       >
         <View style={styles.cardContent}>
-          <View style={styles.avatarContainer}>
+          <View style={[styles.avatarContainer, { borderRadius: 24, padding: 3, borderWidth: 1, borderColor: colors.glow + '35', backgroundColor: colors.card, ...dynamicTheme.shadows.sm, shadowColor: colors.glow }]}>
             {profilePictureUrl ? (
               <Image
                 source={{ uri: profilePictureUrl }}
@@ -98,7 +99,7 @@ const InstructorListScreen = () => {
             )}
             {isAvailable && (
               <View style={[styles.availableBadge, { backgroundColor: colors.background, borderColor: colors.background }]}>
-                <View style={[styles.availableDot, { backgroundColor: colors.success }]} />
+                <MotionView pulse style={[styles.availableDot, { backgroundColor: colors.success }]} />
               </View>
             )}
           </View>
@@ -184,7 +185,7 @@ const InstructorListScreen = () => {
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
+          <FocusSurface style={[styles.searchBar, { backgroundColor: colors.card, borderRadius: 9999 }]}>
             <Ionicons name="search" size={20} color={colors.textSecondary} />
             <TextInput
               placeholder="Search instructors..."
@@ -198,7 +199,7 @@ const InstructorListScreen = () => {
                 <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
-          </View>
+          </FocusSurface>
         </View>
       </LinearGradient>
 

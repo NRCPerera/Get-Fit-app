@@ -3,6 +3,9 @@ import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Platform } from 'r
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../../styles/theme';
+import { useTheme } from '../../context/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { glassmorphism } from '../../styles/shared';
 
 /**
  * ScreenHeader - A reusable header component with back button
@@ -38,6 +41,9 @@ export default function ScreenHeader({
     backIconColor,
 }) {
     const navigation = useNavigation();
+    const { theme: activeTheme, isDark } = useTheme();
+    const insets = useSafeAreaInsets();
+    const colors = activeTheme.colors;
 
     const handleBackPress = () => {
         if (onBackPress) {
@@ -47,11 +53,11 @@ export default function ScreenHeader({
         }
     };
 
-    const iconColor = backIconColor || theme.colors.text;
+    const iconColor = backIconColor || colors.text;
 
     return (
-        <View style={[styles.container, transparent && styles.transparent, style]}>
-            <StatusBar barStyle="dark-content" backgroundColor={transparent ? 'transparent' : theme.colors.background} />
+        <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 10 }, !transparent && activeTheme.shadows.sm, transparent && styles.transparent, style]}>
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={transparent ? 'transparent' : colors.background} />
 
             <View style={styles.content}>
                 {/* Left side - Back button */}
@@ -59,11 +65,13 @@ export default function ScreenHeader({
                     {showBackButton && (
                         <TouchableOpacity
                             style={styles.backButton}
+                            accessibilityRole="button"
+                            accessibilityLabel="Go back"
                             onPress={handleBackPress}
                             activeOpacity={0.7}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                            <View style={styles.backButtonInner}>
+                            <View style={[styles.backButtonInner, glassmorphism(activeTheme)]}>
                                 <Ionicons name="chevron-back" size={24} color={iconColor} />
                             </View>
                         </TouchableOpacity>
@@ -73,12 +81,12 @@ export default function ScreenHeader({
                 {/* Center - Title */}
                 <View style={styles.centerContainer}>
                     {title && (
-                        <Text style={styles.title} numberOfLines={1}>
+                        <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
                             {title}
                         </Text>
                     )}
                     {subtitle && (
-                        <Text style={styles.subtitle} numberOfLines={1}>
+                        <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
                             {subtitle}
                         </Text>
                     )}
@@ -94,7 +102,7 @@ export default function ScreenHeader({
                             activeOpacity={0.7}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
-                            <Ionicons name={rightIcon} size={24} color={theme.colors.text} />
+                            <Ionicons name={rightIcon} size={24} color={colors.text} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -109,7 +117,7 @@ const styles = StyleSheet.create({
         paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 10,
         paddingHorizontal: theme.spacing[4],
         paddingBottom: theme.spacing[3],
-        borderBottomWidth: 1,
+        borderBottomWidth: 0,
         borderBottomColor: theme.colors.border,
     },
     transparent: {

@@ -171,7 +171,7 @@ const MessagesScreen = ({ navigation }) => {
         style={[
           styles.conversationItem,
           { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 },
-          hasUnread && [styles.unreadItem, { backgroundColor: isDark ? colors.backgroundSecondary : '#F5F3FF', borderLeftColor: colors.primary }]
+          hasUnread && [styles.unreadItem, { backgroundColor: isDark ? colors.backgroundSecondary : colors.primaryLight, borderLeftColor: colors.primary }]
         ]}
         onPress={() => handleConversationPress(item)}
         activeOpacity={0.7}

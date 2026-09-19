@@ -1,8 +1,9 @@
+import { ScaleTouchable as TouchableOpacity, MotionView } from '../../components/common/Motion';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   Alert,
 } from 'react-native';
@@ -82,11 +83,12 @@ const LoginScreen = () => {
       contentContainerStyle={styles.scrollContainer}
     >
       <View style={styles.content}>
+        <MotionView pulse pointerEvents="none" style={StyleSheet.absoluteFillObject}><LinearGradient colors={[colors.primary + '18', colors.background, colors.primary + '08']} style={StyleSheet.absoluteFillObject} /></MotionView>
         {/* Header */}
         <View style={styles.header}>
-          <View style={[styles.logoContainer, { backgroundColor: colors.primary + '15' }]}>
+          <MotionView pulse style={[styles.logoContainer, { backgroundColor: colors.primary + '15' }]}>
             <Ionicons name="fitness" size={48} color={colors.primary} />
-          </View>
+          </MotionView>
           <Text style={[headerStyles.title, { color: colors.text }]}>Welcome Back</Text>
           <Text style={[headerStyles.subtitle, { color: colors.textSecondary }]}>Sign in to continue your fitness journey</Text>
         </View>
@@ -208,6 +210,8 @@ const styles = StyleSheet.create({
   },
   registerContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },

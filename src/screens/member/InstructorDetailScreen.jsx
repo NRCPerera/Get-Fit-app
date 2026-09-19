@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing[3],
     paddingTop: theme.spacing[3],
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: theme.colors.border,
   },
   sectionHeader: {
     flexDirection: 'row',

@@ -1,5 +1,6 @@
+import { ScaleTouchable as TouchableOpacity, MotionView, FocusSurface } from '../../components/common/Motion';
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, Image, TouchableOpacity, TextInput, StatusBar, Modal, Dimensions, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, Image, TextInput, StatusBar, Modal, Dimensions, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -343,8 +344,8 @@ const ExerciseLibraryScreen = () => {
 
               <View style={[styles.cardInfo, { backgroundColor: colors.card }]}>
                 <Text
-                  style={[styles.exerciseName, { color: colors.text, letterSpacing: -0.3, textAlign: 'center' }]}
-                  numberOfLines={1}
+                  style={[styles.exerciseName, { color: colors.text, letterSpacing: -0.3, textAlign: 'left' }]}
+                  numberOfLines={2}
                 >
                   {item.name}
                 </Text>
@@ -436,7 +437,7 @@ const ExerciseLibraryScreen = () => {
           <View style={{ width: 40 }} />
         </View>
         <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
+          <FocusSurface style={[styles.searchBar, { backgroundColor: colors.card, borderRadius: 9999 }]}>
             <Ionicons name="search" size={20} color={colors.textSecondary} />
             <TextInput
               placeholder="Search exercises..."
@@ -450,7 +451,7 @@ const ExerciseLibraryScreen = () => {
                 <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
-          </View>
+          </FocusSurface>
         </View>
       </LinearGradient>
 
@@ -477,16 +478,19 @@ const ExerciseLibraryScreen = () => {
             <TouchableOpacity
               style={[
                 styles.muscleGroupChip,
+                { borderRadius: 9999, minHeight: 44 },
                 { backgroundColor: colors.primary + '10', borderColor: colors.primary + '25' },
                 selectedMuscleGroup === item.key && {
                   backgroundColor: colors.primary,
                   borderColor: colors.primary,
                 },
               ]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: selectedMuscleGroup === item.key }}
               onPress={() => setSelectedMuscleGroup(item.key)}
               activeOpacity={0.7}
             >
-              <Text
+              <MotionView key={`${item.key}-${selectedMuscleGroup === item.key}`}><Text
                 style={[
                   styles.muscleGroupText,
                   { color: colors.primary },
@@ -494,7 +498,7 @@ const ExerciseLibraryScreen = () => {
                 ]}
               >
                 {item.label}
-              </Text>
+              </Text></MotionView>
             </TouchableOpacity>
           )}
         />
@@ -741,7 +745,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   exerciseName: {
-    fontSize: 15,
+    fontSize: 16,
+    lineHeight: 22,
     fontWeight: '700',
     marginBottom: theme.spacing[2],
   },

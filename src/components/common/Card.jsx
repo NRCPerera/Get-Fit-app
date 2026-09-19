@@ -1,5 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, View, StyleSheet } from 'react-native';
+import { MotionView, ScaleTouchable } from './Motion';
+import { glassmorphism } from '../../styles/shared';
+import { View, StyleSheet } from 'react-native';
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -10,7 +12,7 @@ export default function Card({
   variant = 'default',
   padding = 'md',
 }) {
-  const Container = onPress ? TouchableOpacity : View;
+  const Container = onPress ? ScaleTouchable : View;
   const { theme: dynamicTheme } = useTheme();
   const colors = dynamicTheme.colors;
   const shadows = dynamicTheme.shadows;
@@ -38,6 +40,7 @@ export default function Card({
       borderWidth: 0,
       ...shadows.lg,
     },
+    glass: { ...glassmorphism(dynamicTheme), ...shadows.md },
     flat: {
       backgroundColor: colors.backgroundSecondary,
       borderWidth: 0,
@@ -52,12 +55,18 @@ export default function Card({
         styles.card,
         variantStyles[variant] || variantStyles.default,
         {
-          padding: paddingMap[padding] || paddingMap.md,
-          borderRadius: theme.borderRadius.lg,
+          padding: paddingMap[padding] ?? paddingMap.md,
+          borderRadius: theme.borderRadius.xl,
         },
         style,
       ]}
     >
+      {variant === 'elevated' && (
+        <MotionView pulse pointerEvents="none" style={[StyleSheet.absoluteFillObject, {
+          borderRadius: StyleSheet.flatten(style)?.borderRadius ?? theme.borderRadius.xl,
+          borderWidth: 1, borderColor: colors.glow + '25',
+        }]} />
+      )}
       {children}
     </Container>
   );

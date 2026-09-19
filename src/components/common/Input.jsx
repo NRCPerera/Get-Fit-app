@@ -62,6 +62,7 @@ export default function Input({
       <View
         style={[
           styles.inputWrapper,
+          isFocused && { ...dynamicTheme.shadows.sm, shadowColor: error ? colors.error : colors.glow, shadowOpacity: 0.18 },
           {
             borderColor: error
               ? colors.error
@@ -71,10 +72,10 @@ export default function Input({
             backgroundColor: editable
               ? colors.background
               : colors.backgroundSecondary,
-            borderWidth: isFocused ? 2 : 1,
-            borderRadius: theme.borderRadius.md,
-            paddingHorizontal: s.paddingHorizontal,
-            paddingVertical: s.paddingVertical,
+            borderWidth: 1,
+            borderRadius: multiline ? theme.borderRadius.lg : theme.borderRadius.full,
+            paddingHorizontal: s.paddingHorizontal + 2,
+            paddingVertical: s.paddingVertical + 2,
             minHeight: multiline ? 100 : s.minHeight,
             alignItems: multiline ? 'flex-start' : 'center',
           },
@@ -103,6 +104,7 @@ export default function Input({
             },
             inputStyle,
           ]}
+          accessibilityLabel={label || placeholder}
           placeholder={placeholder}
           placeholderTextColor={colors.textTertiary}
           value={value}
@@ -117,6 +119,9 @@ export default function Input({
         />
         {isPassword && (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={isPasswordVisible ? 'Hide password' : 'Show password'}
+            hitSlop={8}
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             style={styles.iconRight}
             activeOpacity={0.7}

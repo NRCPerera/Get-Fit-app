@@ -168,7 +168,7 @@ export const createCardStyle = (variant = 'default', padding = 'md') => {
 
   const baseStyle = {
     borderRadius: theme.borderRadius.lg,
-    padding: paddingMap[padding] || paddingMap.md,
+    padding: paddingMap[padding] ?? paddingMap.md,
     marginBottom: theme.spacing[4],
   };
 
@@ -200,3 +200,17 @@ export const createCardStyle = (variant = 'default', padding = 'md') => {
   }
 };
 
+
+// Pass the active theme so these surfaces follow light/dark changes.
+export const glassmorphism = (activeTheme) => ({
+  backgroundColor: activeTheme.colors.glass,
+  borderWidth: 1,
+  borderColor: activeTheme.colors.glassBorder,
+});
+export const pressAnimationStyle = (scale = 1) => ({ transform: [{ scale }] });
+export const gradientOverlay = { ...StyleSheet.absoluteFillObject, borderRadius: theme.borderRadius.xl };
+export const floatingCard = (activeTheme) => ({
+  ...glassmorphism(activeTheme),
+  ...activeTheme.shadows.lg,
+  borderRadius: activeTheme.borderRadius.xl,
+});

@@ -303,7 +303,7 @@ const ScheduleDetailScreen = () => {
       <View style={[styles.bottomActionBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <TouchableOpacity style={styles.actionButton} onPress={handleEditWorkout}>
           <LinearGradient
-            colors={[colors.secondary, '#8e44ad']}
+            colors={[colors.secondary, colors.secondaryDark]}
             style={styles.actionGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
@@ -315,7 +315,7 @@ const ScheduleDetailScreen = () => {
 
         <TouchableOpacity style={styles.actionButton} onPress={handleStartWorkout}>
           <LinearGradient
-            colors={[colors.primary, '#2980b9']}
+            colors={[colors.primary, colors.primaryDark]}
             style={styles.actionGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}

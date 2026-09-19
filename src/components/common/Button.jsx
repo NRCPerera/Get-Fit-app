@@ -1,5 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, View, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ScaleTouchable } from './Motion';
+import { Text, ActivityIndicator, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
@@ -43,12 +45,12 @@ export default function Button({
       borderWidth: 0,
     },
     danger: {
-      backgroundColor: colors.error,
+      backgroundColor: colors.errorDark,
       color: colors.white,
       borderWidth: 0,
     },
     success: {
-      backgroundColor: colors.success,
+      backgroundColor: colors.successDark,
       color: colors.white,
       borderWidth: 0,
     },
@@ -80,26 +82,34 @@ export default function Button({
   const isDisabled = disabled || loading;
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.7}
+    <ScaleTouchable
+      activeOpacity={0.9}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       onPress={onPress}
       disabled={isDisabled}
       style={[
         styles.button,
         {
           backgroundColor: v.backgroundColor,
-          borderColor: v.borderColor || theme.colors.primary,
+          borderColor: v.borderColor || colors.primary,
           borderWidth: v.borderWidth,
-          borderRadius: theme.borderRadius.md,
+          borderRadius: theme.borderRadius.full,
           opacity: isDisabled ? 0.6 : 1,
           paddingVertical: s.paddingVertical,
           paddingHorizontal: s.paddingHorizontal,
           minHeight: s.minHeight,
           width: fullWidth ? '100%' : undefined,
         },
+        variant === 'primary' && !isDisabled && { ...dynamicTheme.shadows.md, shadowColor: colors.glow },
         style,
       ]}
     >
+      {(variant === 'primary' || variant === 'secondary') && (
+        <LinearGradient pointerEvents="none" colors={colors.gradients[variant]}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFillObject, { borderRadius: StyleSheet.flatten(style)?.borderRadius ?? theme.borderRadius.full }]} />
+      )}
       {loading ? (
         <ActivityIndicator color={v.color} size="small" />
       ) : (
@@ -137,7 +147,7 @@ export default function Button({
           )}
         </View>
       )}
-    </TouchableOpacity>
+    </ScaleTouchable>
   );
 }
 

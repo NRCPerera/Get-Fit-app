@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   quickAmountBtnActive: {
-    backgroundColor: '#DC2626',
+    backgroundColor: theme.colors.primary,
   },
   quickAmountText: {
     fontSize: theme.typography.fontSize.sm,
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   infoBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#DC2626' + '10',
+    backgroundColor: theme.colors.primary + '10',
     borderRadius: 16,
     padding: theme.spacing[4],
     marginBottom: theme.spacing[4],

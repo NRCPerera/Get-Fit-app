@@ -1,11 +1,14 @@
+import { ScaleTouchable as TouchableOpacity, CountUpText } from '../../components/common/Motion';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, RefreshControl, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl, ScrollView, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../../styles/theme'; // Static theme for StyleSheet
 import { useTheme } from '../../context/ThemeContext'; // Dynamic theme for component
 import { scheduleAPI } from '../../api/schedule.api';
+import { userAPI } from '../../api/user.api';
 import { fetchUserProfile } from '../../store/slices/userSlice';
 import { logoutUser } from '../../store/slices/authSlice';
 import Loading from '../../components/common/Loading';
@@ -154,36 +157,36 @@ const ProfileScreen = () => {
       label: 'Workouts',
       value: totalWorkouts > 0 ? totalWorkouts.toString() : '0',
       icon: 'fitness',
-      color: theme.colors.primary
+      color: colors.primary
     },
     {
       label: 'Streak',
       value: streakDays > 0 ? `${streakDays} day${streakDays !== 1 ? 's' : ''}` : '0 days',
       icon: 'flame',
-      color: theme.colors.warning
+      color: colors.warning
     },
     {
       label: 'Schedules',
       value: totalSchedules.toString(),
       icon: 'calendar',
-      color: theme.colors.secondary
+      color: colors.secondary
     },
     {
       label: 'Progress',
       value: `${progressPercentage}%`,
       icon: 'trending-up',
-      color: theme.colors.success
+      color: colors.success
     },
   ];
 
   const menuItems = [
-    { icon: 'create-outline', label: 'Edit Profile', color: theme.colors.primary, screen: 'EditProfile' },
-    { icon: 'chatbubbles-outline', label: 'Messages', color: theme.colors.info, screen: 'Messages' },
-    { icon: 'card-outline', label: 'Membership Plans', color: theme.colors.secondary, screen: 'MembershipPlans' },
-    { icon: 'analytics-outline', label: 'Progress Tracking', color: theme.colors.primary, screen: 'ProgressTracking' },
-    { icon: 'medical-outline', label: 'Medical Information', color: theme.colors.secondary, screen: 'MedicalForm' },
-    { icon: 'restaurant-outline', label: 'Nutrition Plans', color: theme.colors.success, screen: 'Nutrition' },
-    { icon: 'notifications-outline', label: 'Notifications', color: theme.colors.warning, screen: 'Notifications' },
+    { icon: 'create-outline', label: 'Edit Profile', color: colors.primary, screen: 'EditProfile' },
+    { icon: 'chatbubbles-outline', label: 'Messages', color: colors.info, screen: 'Messages' },
+    { icon: 'card-outline', label: 'Membership Plans', color: colors.secondary, screen: 'MembershipPlans' },
+    { icon: 'analytics-outline', label: 'Progress Tracking', color: colors.primary, screen: 'ProgressTracking' },
+    { icon: 'medical-outline', label: 'Medical Information', color: colors.secondary, screen: 'MedicalForm' },
+    { icon: 'restaurant-outline', label: 'Nutrition Plans', color: colors.success, screen: 'Nutrition' },
+    { icon: 'notifications-outline', label: 'Notifications', color: colors.warning, screen: 'Notifications' },
     { icon: 'help-circle-outline', label: 'Help & Support', color: colors.primary, screen: 'HelpSupport' },
     { icon: 'information-circle-outline', label: 'About', color: colors.secondary, screen: 'About' },
   ];
@@ -197,6 +200,7 @@ const ProfileScreen = () => {
     >
       {/* Profile Header */}
       <View style={styles.profileHeader}>
+        <LinearGradient pointerEvents="none" colors={colors.accentGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.profileBanner} />
         <View style={styles.avatarContainer}>
           {u.profilePicture ? (
             <Image
@@ -205,7 +209,7 @@ const ProfileScreen = () => {
               resizeMode="cover"
             />
           ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary + '20' }]}>
+            <View style={[styles.avatarPlaceholder, { backgroundColor: colors.card }]}>
               <Text style={[styles.avatarText, { color: colors.primary }]}>{initials}</Text>
             </View>
           )}
@@ -233,18 +237,18 @@ const ProfileScreen = () => {
       {/* Stats Grid */}
       <View style={styles.statsContainer}>
         {stats.map((stat, index) => (
-          <Card key={index} variant="elevated" style={[styles.statCard, { backgroundColor: colors.card }]}>
+          <Card key={index} variant="glass" style={[styles.statCard, { backgroundColor: colors.glass }]}>
             <View style={[styles.statIconContainer, { backgroundColor: stat.color + '15' }]}>
               <Ionicons name={stat.icon} size={24} color={stat.color} />
             </View>
-            <Text style={[styles.statValue, { color: colors.text }]}>{stat.value}</Text>
+            <CountUpText style={[styles.statValue, { color: colors.text }]} value={stat.value} />
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{stat.label}</Text>
           </Card>
         ))}
       </View>
 
       {/* Account Information */}
-      <Card variant="elevated" style={[styles.infoCard, { backgroundColor: colors.card }]}>
+      <Card variant="glass" style={[styles.infoCard, { backgroundColor: colors.glass }]}>
         <Text style={[headerStyles.sectionTitle, { color: colors.text }]}>Account Information</Text>
         <View style={styles.infoRow}>
           <View style={styles.infoRowLeft}>
@@ -292,7 +296,7 @@ const ProfileScreen = () => {
       </Card>
 
       {/* Menu Items */}
-      <Card variant="elevated" style={[styles.menuCard, { backgroundColor: colors.card }]}>
+      <Card variant="glass" style={[styles.menuCard, { backgroundColor: colors.glass }]}>
         <Text style={[headerStyles.sectionTitle, { color: colors.text }]}>Menu</Text>
         {menuItems.map((item, index) => (
           <TouchableOpacity
@@ -337,6 +341,16 @@ const ProfileScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  profileBanner: {
+    position: 'absolute',
+    // Extend through the ScrollView's content padding to meet the screen edges.
+    top: -theme.spacing[6],
+    left: -theme.spacing[6],
+    right: -theme.spacing[6],
+    height: 105 + theme.spacing[6],
+    borderBottomLeftRadius: theme.borderRadius.xl,
+    borderBottomRightRadius: theme.borderRadius.xl,
+  },
   profileHeader: {
     alignItems: 'center',
     marginBottom: theme.spacing[8],

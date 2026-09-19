@@ -81,23 +81,27 @@ export default function GradientCard({
 const getGradientColors = (variant) => {
     switch (variant) {
         case 'primary':
-            return ['#4C6EF5', '#748FFC', '#91A7FF'];
+            return ['#2563EB', '#3B82F6', '#60A5FA'];
         case 'secondary':
-            return ['#15AABF', '#22B8CF', '#3BC9DB'];
+            return ['#06B6D4', '#22D3EE', '#67E8F9'];
         case 'success':
-            return ['#37B24D', '#51CF66', '#69DB7C'];
+            return ['#059669', '#10B981', '#34D399'];
         case 'warning':
-            return ['#F59F00', '#FCC419', '#FFE066'];
+            return ['#D97706', '#F59E0B', '#FBBF24'];
         case 'info':
-            return ['#1C7ED6', '#339AF0', '#4DABF7'];
+            return ['#1D4ED8', '#2563EB', '#3B82F6'];
         case 'purple':
-            return ['#7950F2', '#9775FA', '#B197FC'];
+            return ['#7C3AED', '#8B5CF6', '#A78BFA'];
         case 'pink':
-            return ['#E64980', '#F06595', '#F783AC'];
+            return ['#DB2777', '#EC4899', '#F472B6'];
         case 'dark':
-            return ['#212529', '#343A40', '#495057'];
+            return ['#1E293B', '#334155', '#475569'];
+        case 'premium':
+            return ['#2563EB', '#7C3AED', '#06B6D4'];
+        case 'cyan':
+            return ['#0891B2', '#06B6D4', '#22D3EE'];
         default:
-            return ['#4C6EF5', '#748FFC', '#91A7FF'];
+            return ['#2563EB', '#3B82F6', '#60A5FA'];
     }
 };
 

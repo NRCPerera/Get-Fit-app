@@ -28,12 +28,12 @@ const LightNavigationTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: '#DC2626',
-    background: '#FFFFFF',
+    primary: '#2563EB',
+    background: '#F8FAFC',
     card: '#FFFFFF',
-    text: '#171717',
-    border: '#E5E5E5',
-    notification: '#D4AF37',
+    text: '#111827',
+    border: '#E5E7EB',
+    notification: '#06B6D4',
   },
 };
 
@@ -41,12 +41,12 @@ const DarkNavigationTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    primary: '#DC2626',
-    background: '#000000',
-    card: '#171717',
-    text: '#FFFFFF',
-    border: '#404040',
-    notification: '#D4AF37',
+    primary: '#3B82F6',
+    background: '#0B1020',
+    card: '#1F2937',
+    text: '#F9FAFB',
+    border: '#334155',
+    notification: '#22D3EE',
   },
 };
 

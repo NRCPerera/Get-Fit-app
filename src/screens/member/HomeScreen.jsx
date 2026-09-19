@@ -1,5 +1,7 @@
+import { ScaleTouchable as TouchableOpacity, MotionView } from '../../components/common/Motion';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions, StatusBar, AppState } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Dimensions, StatusBar, AppState } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -28,6 +30,7 @@ const HomeScreen = () => {
   const dispatch = useDispatch();
   const { theme: dynamicTheme, isDark } = useTheme();
   const colors = dynamicTheme.colors;
+  const [workoutCategory, setWorkoutCategory] = useState('all');
   
   // Get profile from Redux
   const { profile } = useSelector((state) => state.user);
@@ -258,7 +261,7 @@ const HomeScreen = () => {
 
       {/* Flat Brand Header Background */}
       <View style={styles.bgDecoration}>
-        <View style={[styles.bgGradient, { backgroundColor: colors.primary }]} />
+        <LinearGradient colors={colors.accentGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.bgGradient} />
       </View>
 
       <ScrollView
@@ -299,14 +302,14 @@ const HomeScreen = () => {
 
         {/* Dashboard Grid — Flat Cards with Semantic Colors */}
         <View style={styles.gridContainer}>
-          {quickStats.map((stat) => (
+          {quickStats.map((stat, index) => (
             <TouchableOpacity
               key={stat.id}
               activeOpacity={0.9}
               style={styles.gridItemWrapper}
               onPress={stat.action}
             >
-              <View style={[styles.gridItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <MotionView delay={index * 70} style={[styles.gridItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={[styles.gridIcon, { backgroundColor: stat.accentBg }]}>
                   <Ionicons name={stat.icon} size={24} color={stat.accentColor} />
                 </View>
@@ -315,7 +318,7 @@ const HomeScreen = () => {
                   <Text style={[styles.gridLabel, { color: colors.text }]}>{stat.label}</Text>
                   <Text style={[styles.gridSub, { color: colors.textSecondary }]}>{stat.subValue}</Text>
                 </View>
-              </View>
+              </MotionView>
             </TouchableOpacity>
           ))}
         </View>
@@ -337,6 +340,7 @@ const HomeScreen = () => {
                 },
               ]}
             >
+              <LinearGradient pointerEvents="none" colors={colors.accentGradient} style={[StyleSheet.absoluteFillObject, { opacity: 0.06, borderRadius: 24 }]} />
               <View style={styles.bannerContent}>
                 <View>
                   <Text style={[styles.bannerLabel, { color: colors.textSecondary }]}>Current Plan</Text>
@@ -411,22 +415,34 @@ const HomeScreen = () => {
           {/* Recommended Plans Horizontal Scroll */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>For You</Text>
-            {((customWorkouts.beginner?.length > 0) || (customWorkouts.intermediate?.length > 0) || (customWorkouts.advanced?.length > 0) || (customWorkouts.warmup?.length > 0) || (customWorkouts.warmdown?.length > 0)) ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 16 }}>
+              {['all', 'warmup', 'beginner', 'intermediate', 'advanced', 'warmdown'].map(category => (
+                <TouchableOpacity key={category} accessibilityRole="button" accessibilityState={{ selected: workoutCategory === category }}
+                  onPress={() => setWorkoutCategory(category)} style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 9999,
+                    backgroundColor: workoutCategory === category ? colors.primaryDark : colors.card }}>
+                  <MotionView key={`${category}-${workoutCategory === category}`}><Text style={{ fontWeight: '600', color: workoutCategory === category ? '#FFFFFF' : colors.textSecondary }}>
+                    {category === 'all' ? 'All workouts' : category.charAt(0).toUpperCase() + category.slice(1)}
+                  </Text></MotionView>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {(workoutCategory === 'all' ? Object.values(customWorkouts).some(plans => plans?.length > 0) : customWorkouts[workoutCategory]?.length > 0) ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.hScroll}
               >
-                {(customWorkouts.warmup || []).map(renderPlanCard)}
-                {(customWorkouts.beginner || []).map(renderPlanCard)}
-                {(customWorkouts.intermediate || []).map(renderPlanCard)}
-                {(customWorkouts.advanced || []).map(renderPlanCard)}
-                {(customWorkouts.warmdown || []).map(renderPlanCard)}
+                {(workoutCategory === 'all' || workoutCategory === 'warmup') && (customWorkouts.warmup || []).map(renderPlanCard)}
+                {(workoutCategory === 'all' || workoutCategory === 'beginner') && (customWorkouts.beginner || []).map(renderPlanCard)}
+                {(workoutCategory === 'all' || workoutCategory === 'intermediate') && (customWorkouts.intermediate || []).map(renderPlanCard)}
+                {(workoutCategory === 'all' || workoutCategory === 'advanced') && (customWorkouts.advanced || []).map(renderPlanCard)}
+                {(workoutCategory === 'all' || workoutCategory === 'warmdown') && (customWorkouts.warmdown || []).map(renderPlanCard)}
               </ScrollView>
             ) : (
               <View style={[styles.emptySchedule, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="fitness-outline" size={40} color={colors.textTertiary} />
-                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No workout programs available yet</Text>
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{workoutCategory === 'all' ? 'No workout programs available yet' : 'No workouts in this category yet'}</Text>
               </View>
             )}
           </View>
@@ -489,7 +505,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.28)',
   },
   notificationDot: {
     position: 'absolute',

@@ -133,11 +133,11 @@ const MyClientsScreen = () => {
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.backgroundSecondary }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#F59F00" />
+      <StatusBar barStyle="light-content" backgroundColor={colors.gradients.warm[0]} />
 
       {/* Gradient Header */}
       <LinearGradient
-        colors={['#F59F00', '#FCC419', '#FFE066']}
+        colors={[...colors.gradients.warm, colors.accent || colors.gradients.warm[1]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.headerGradient, { paddingTop: insets.top + 10 }]}

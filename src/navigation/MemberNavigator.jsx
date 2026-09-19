@@ -1,4 +1,6 @@
 import React from 'react';
+import { View } from 'react-native';
+import { MotionView } from '../components/common/Motion';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -274,20 +276,28 @@ const MemberNavigator = () => {
             iconName = focused ? 'person' : 'person-outline';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <MotionView key={focused ? 'active' : 'idle'} style={{
+            width: 48, height: 32, borderRadius: 9999, alignItems: 'center', justifyContent: 'center',
+            backgroundColor: focused ? colors.primary + '18' : 'transparent',
+          }}><Ionicons name={iconName} size={focused ? 25 : 22} color={color} /></MotionView>;
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
+        tabBarHideOnKeyboard: true,
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginTop: 2 },
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 5,
-          paddingTop: 5,
-          height: 60 + (insets.bottom > 0 ? insets.bottom : 0),
-          elevation: 0,
-          shadowOpacity: 0,
+          backgroundColor: 'transparent', borderTopWidth: 0,
+          paddingBottom: Math.max(insets.bottom, 12) + 8,
+          paddingTop: 16,
+          height: 76 + Math.max(insets.bottom, 12),
+          elevation: 0, shadowOpacity: 0,
         },
+        tabBarItemStyle: { marginHorizontal: 2 },
+        tabBarBackground: () => <View pointerEvents="none" style={{
+          position: 'absolute', top: 6, left: 12, right: 12, bottom: Math.max(insets.bottom, 12),
+          borderRadius: 32, backgroundColor: colors.glass,
+          borderWidth: 1, borderColor: colors.glassBorder, ...dynamicTheme.shadows.lg,
+        }} />,
         headerStyle: {
           backgroundColor: colors.surface,
           borderBottomColor: colors.border,

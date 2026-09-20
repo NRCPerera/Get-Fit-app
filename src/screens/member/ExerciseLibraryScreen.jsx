@@ -1,6 +1,6 @@
 import { ScaleTouchable as TouchableOpacity, MotionView, FocusSurface } from '../../components/common/Motion';
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, Image, TextInput, StatusBar, Modal, Dimensions, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, Image, TextInput, StatusBar, Modal, Dimensions, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -88,25 +88,56 @@ const VideoPlayerModal = ({ visible, videoUrl, exerciseName, onClose }) => {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
+const PAGE_LIMIT = 20;
+const DEBOUNCE_MS = 400;
+
 const ExerciseLibraryScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { theme: dynamicTheme, isDark } = useTheme();
   const colors = dynamicTheme.colors;
 
+  // ── Core data state ─────────────────────────────────────────────────────────
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState(0);
+
+  // ── Filters ─────────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState('all');
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [videoThumbnails, setVideoThumbnails] = useState({});
+
+  // ── Guard ref to prevent duplicate fetches during rapid scroll ──────────────
+  const isFetchingRef = useRef(false);
 
   // ── Thumbnail queue refs (never trigger re-renders themselves) ──────────────
   const thumbnailQueueRef = useRef([]);
   const isProcessingRef = useRef(false);
   // Tracks IDs already queued so refreshes don't re-generate existing thumbnails
   const generatedIdsRef = useRef(new Set());
+
+  // ── Search debounce ─────────────────────────────────────────────────────────
+  const debounceTimerRef = useRef(null);
+  const handleSearchChange = useCallback((text) => {
+    setSearchQuery(text);
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedQuery(text);
+    }, DEBOUNCE_MS);
+  }, []);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
 
   // ── Background thumbnail processor ─────────────────────────────────────────
   // Empty deps: only touches refs and uses a functional setState updater,
@@ -140,7 +171,7 @@ const ExerciseLibraryScreen = () => {
     isProcessingRef.current = false;
   }, []); // ← intentionally empty
 
-  // ── Queue builder — called once after data loads, never inside renderItem ──
+  // ── Queue builder — called with newly fetched items only ───────────────────
   const queueThumbnailGeneration = useCallback(
     (exercises) => {
       const pending = exercises.filter((item) => {
@@ -162,66 +193,123 @@ const ExerciseLibraryScreen = () => {
     [processThumbnailQueue]
   );
 
-  // ── Data loading ────────────────────────────────────────────────────────────
-  const load = useCallback(async () => {
-    try {
-      const res = await exerciseAPI.getAllExercises({ page: 1, limit: 100, status: 'active' });
-      const payload = res?.data?.data || res?.data || res;
-      const exercises = payload.items || payload?.data?.items || [];
-      setItems(exercises);
+  // ── Paginated data loading ─────────────────────────────────────────────────
+  const loadPage = useCallback(async (pageNum, reset = false) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
 
-      // Kick off thumbnail generation AFTER data is set — never during render
-      queueThumbnailGeneration(exercises);
+    try {
+      if (reset) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const params = {
+        page: pageNum,
+        limit: PAGE_LIMIT,
+        status: 'active',
+      };
+
+      // Server-side search
+      if (debouncedQuery) {
+        params.q = debouncedQuery;
+      }
+
+      // Server-side muscle group filter
+      if (selectedMuscleGroup !== 'all') {
+        params.muscleGroups = selectedMuscleGroup;
+      }
+
+      const res = await exerciseAPI.getAllExercises(params);
+      const payload = res?.data?.data || res?.data || res;
+      const newItems = payload.items || payload?.data?.items || [];
+      const serverPage = payload.page || payload?.data?.page || pageNum;
+      const serverPages = payload.pages || payload?.data?.pages || 1;
+      const serverTotal = payload.total || payload?.data?.total || 0;
+
+      if (reset) {
+        setItems(newItems);
+        // Clear thumbnail refs on full reset so new items can be queued
+        generatedIdsRef.current.clear();
+      } else {
+        setItems((prev) => [...prev, ...newItems]);
+      }
+
+      setPage(serverPage);
+      setTotal(serverTotal);
+      setHasMore(serverPage < serverPages);
+
+      // Queue thumbnails for only the newly fetched batch
+      queueThumbnailGeneration(newItems);
+    } catch (e) {
+      // Error loading exercises — silent
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       setRefreshing(false);
+      isFetchingRef.current = false;
     }
-  }, [queueThumbnailGeneration]);
+  }, [debouncedQuery, selectedMuscleGroup, queueThumbnailGeneration]);
 
+  // ── Initial load & reload on filter changes ─────────────────────────────────
   useEffect(() => {
-    load();
-  }, [load]);
+    setPage(1);
+    setHasMore(true);
+    loadPage(1, true);
+  }, [debouncedQuery, selectedMuscleGroup]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    load();
-  }, [load]);
+    setPage(1);
+    setHasMore(true);
+    loadPage(1, true);
+  }, [loadPage]);
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
-  const muscleGroups = useMemo(() => {
-    const groups = new Set();
-    items.forEach((item) => {
-      if (Array.isArray(item.muscleGroups)) {
-        item.muscleGroups.forEach((g) => groups.add(g.toLowerCase()));
+  // ── Infinite scroll handler ─────────────────────────────────────────────────
+  const handleLoadMore = useCallback(() => {
+    if (!hasMore || loadingMore || loading) return;
+    loadPage(page + 1, false);
+  }, [hasMore, loadingMore, loading, page, loadPage]);
+
+  // ── Muscle group chips (fetched once on mount for complete list) ─────────────
+  const [allMuscleGroups, setAllMuscleGroups] = useState([{ key: 'all', label: 'All' }]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchMuscleGroups = async () => {
+      try {
+        // Lightweight one-time fetch to discover all muscle groups
+        const res = await exerciseAPI.getAllExercises({ page: 1, limit: 500, status: 'active' });
+        const payload = res?.data?.data || res?.data || res;
+        const allItems = payload.items || payload?.data?.items || [];
+
+        const groups = new Set();
+        allItems.forEach((item) => {
+          if (Array.isArray(item.muscleGroups)) {
+            item.muscleGroups.forEach((g) => groups.add(g.toLowerCase()));
+          }
+        });
+        const sorted = [...groups].sort();
+
+        if (!cancelled) {
+          setAllMuscleGroups([
+            { key: 'all', label: 'All' },
+            ...sorted.map((g) => ({
+              key: g,
+              label: g.charAt(0).toUpperCase() + g.slice(1),
+            })),
+          ]);
+        }
+      } catch (e) {
+        // Silently fail — chips will just show "All"
       }
-    });
-    const sorted = [...groups].sort();
-    return [
-      { key: 'all', label: 'All' },
-      ...sorted.map((g) => ({
-        key: g,
-        label: g.charAt(0).toUpperCase() + g.slice(1),
-      })),
-    ];
-  }, [items]);
+    };
+    fetchMuscleGroups();
+    return () => { cancelled = true; };
+  }, []);
 
-  const filteredItems = useMemo(
-    () =>
-      items.filter((item) => {
-        const matchesSearch =
-          !searchQuery ||
-          item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.category?.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesMuscle =
-          selectedMuscleGroup === 'all' ||
-          (Array.isArray(item.muscleGroups) &&
-            item.muscleGroups.some(
-              (g) => g.toLowerCase() === selectedMuscleGroup.toLowerCase()
-            ));
-        return matchesSearch && matchesMuscle;
-      }),
-    [items, searchQuery, selectedMuscleGroup]
-  );
+  const muscleGroups = allMuscleGroups;
 
   const handlePlayVideo = useCallback((item) => {
     if (item.videoUrl) setSelectedVideo(item);
@@ -400,7 +488,7 @@ const ExerciseLibraryScreen = () => {
   // ── Stable key extractor ────────────────────────────────────────────────────
   const keyExtractor = useCallback((item) => item._id || item.id, []);
 
-  if (loading) return <Loading />;
+  if (loading && items.length === 0) return <Loading />;
 
   return (
     <KeyboardAvoidingView
@@ -432,7 +520,7 @@ const ExerciseLibraryScreen = () => {
           <BackButton style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>Exercise Library</Text>
-            <Text style={styles.headerSubtitle}>{items.length} exercises available</Text>
+            <Text style={styles.headerSubtitle}>{total > 0 ? `${total} exercises available` : 'Browse exercises'}</Text>
           </View>
           <View style={{ width: 40 }} />
         </View>
@@ -443,11 +531,11 @@ const ExerciseLibraryScreen = () => {
               placeholder="Search exercises..."
               placeholderTextColor={colors.textTertiary}
               value={searchQuery}
-              onChangeText={setSearchQuery}
+              onChangeText={handleSearchChange}
               style={[styles.searchInput, { color: colors.text }]}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <TouchableOpacity onPress={() => { setSearchQuery(''); setDebouncedQuery(''); }}>
                 <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
@@ -506,7 +594,7 @@ const ExerciseLibraryScreen = () => {
 
       {/* Exercise Grid */}
       <FlatList
-        data={filteredItems}
+        data={items}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         numColumns={2}
@@ -519,20 +607,32 @@ const ExerciseLibraryScreen = () => {
             tintColor={colors.primary}
           />
         }
-        ListEmptyComponent={
-          <View style={[styles.emptyState, { backgroundColor: colors.background }]}>
-            <View style={[styles.emptyIconContainer, { backgroundColor: colors.primary + '15' }]}>
-              <Ionicons name="fitness-outline" size={48} color={colors.primary} />
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.footerLoader}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={[styles.footerLoaderText, { color: colors.textSecondary }]}>Loading more...</Text>
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              {searchQuery ? 'No exercises found' : 'No exercises available'}
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              {searchQuery
-                ? 'Try adjusting your search terms'
-                : 'Check back later for new exercises'}
-            </Text>
-          </View>
+          ) : null
+        }
+        ListEmptyComponent={
+          !loading ? (
+            <View style={[styles.emptyState, { backgroundColor: colors.background }]}>
+              <View style={[styles.emptyIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                <Ionicons name="fitness-outline" size={48} color={colors.primary} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                {searchQuery ? 'No exercises found' : 'No exercises available'}
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                {searchQuery
+                  ? 'Try adjusting your search terms'
+                  : 'Check back later for new exercises'}
+              </Text>
+            </View>
+          ) : null
         }
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -867,6 +967,16 @@ const styles = StyleSheet.create({
   },
   videoPlayer: {
     flex: 1,
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing[4],
+    gap: theme.spacing[2],
+  },
+  footerLoaderText: {
+    fontSize: theme.typography.fontSize.sm,
   },
 });
 

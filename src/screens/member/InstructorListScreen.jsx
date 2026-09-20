@@ -1,6 +1,6 @@
 import { ScaleTouchable as TouchableOpacity, MotionView, FocusSurface } from '../../components/common/Motion';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, Image, StatusBar, Platform, TextInput, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, Image, StatusBar, Platform, TextInput, KeyboardAvoidingView, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -9,10 +9,126 @@ import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
 import { instructorAPI } from '../../api/instructor.api';
 import { getFileUrl } from '../../utils/helpers';
-import Card from '../../components/common/Card';
 import BackButton from '../../components/common/BackButton';
 
 const PAGE_SIZE = 20;
+
+const InstructorCard = ({ item, index, navigation, colors, dynamicTheme, isDark }) => {
+  const profilePicture = item?.user?.profilePicture || item?.profilePicture;
+  const profilePictureUrl = profilePicture ? getFileUrl(profilePicture) : null;
+
+  const name = item.name || item?.user?.name || 'Instructor';
+  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const specialty = item.specialty || item.specializations?.[0] || 'Fitness Trainer';
+  const experience = item.experience ? `${item.experience} ${item.experience === 1 ? 'year' : 'years'}` : null;
+  const monthlyRate = item.monthlyRate ? `LKR ${item.monthlyRate}/mo` : null;
+  const isAvailable = item.isAvailable !== false;
+  const acceptingMembers = item.acceptingMembers !== false;
+
+  return (
+    <MotionView delay={index * 60}>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('InstructorDetail', { id: item._id })}
+        activeOpacity={0.85}
+        style={[styles.card, {
+          backgroundColor: colors.card,
+          borderColor: isDark ? colors.border + '60' : colors.border + '30',
+          ...dynamicTheme.shadows.md,
+        }]}
+      >
+        {/* Top section: Avatar + Name + Specialty */}
+        <View style={styles.cardTopRow}>
+          {/* Avatar with gradient ring */}
+          <View style={styles.avatarWrapper}>
+            <LinearGradient
+              colors={colors.gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.avatarRing}
+            >
+              <View style={[styles.avatarInner, { backgroundColor: colors.card }]}>
+                {profilePictureUrl ? (
+                  <Image
+                    source={{ uri: profilePictureUrl }}
+                    style={styles.avatar}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <LinearGradient
+                    colors={[colors.primary + '30', colors.secondary + '20']}
+                    style={styles.avatarPlaceholder}
+                  >
+                    <Text style={[styles.avatarText, { color: colors.primary }]}>{initials}</Text>
+                  </LinearGradient>
+                )}
+              </View>
+            </LinearGradient>
+            {isAvailable && (
+              <View style={[styles.statusBadge, { backgroundColor: colors.card, borderColor: colors.card }]}>
+                <MotionView pulse style={[styles.statusDot, { backgroundColor: colors.success }]} />
+              </View>
+            )}
+          </View>
+
+          {/* Name & Specialty */}
+          <View style={styles.cardInfo}>
+            <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{name}</Text>
+            <View style={styles.specialtyRow}>
+              <Ionicons name="fitness-outline" size={13} color={colors.primary} />
+              <Text style={[styles.specialty, { color: colors.textSecondary }]} numberOfLines={1}>{specialty}</Text>
+            </View>
+          </View>
+
+          {/* Arrow */}
+          <View style={[styles.arrowCircle, { backgroundColor: colors.primary + '12' }]}>
+            <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+          </View>
+        </View>
+
+        {/* Bio */}
+        {item.bio && (
+          <Text style={[styles.bio, { color: colors.textTertiary }]} numberOfLines={2}>{item.bio}</Text>
+        )}
+
+        {/* Divider */}
+        <View style={[styles.divider, { backgroundColor: colors.border + '40' }]} />
+
+        {/* Bottom chips row */}
+        <View style={styles.chipsRow}>
+          {experience && (
+            <View style={[styles.chip, { backgroundColor: colors.primary + '10' }]}>
+              <Ionicons name="time-outline" size={13} color={colors.primary} />
+              <Text style={[styles.chipText, { color: colors.primary }]}>{experience}</Text>
+            </View>
+          )}
+          {monthlyRate && (
+            <View style={[styles.chip, { backgroundColor: colors.accent ? colors.accent + '12' : colors.secondary + '12' }]}>
+              <Ionicons name="cash-outline" size={13} color={colors.accent || colors.secondary} />
+              <Text style={[styles.chipText, { color: colors.accent || colors.secondary }]}>{monthlyRate}</Text>
+            </View>
+          )}
+          <View style={[styles.chip, {
+            backgroundColor: acceptingMembers ? colors.success + '12' : colors.warning + '12',
+            marginLeft: 'auto',
+          }]}>
+            <Ionicons
+              name={acceptingMembers ? 'person-add-outline' : 'close-circle-outline'}
+              size={13}
+              color={acceptingMembers ? colors.success : colors.warning}
+            />
+            <Text style={[styles.chipText, {
+              color: acceptingMembers ? colors.success : colors.warning,
+              fontWeight: '600',
+            }]}>
+              {acceptingMembers ? 'Open' : 'Full'}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </MotionView>
+  );
+};
 
 const InstructorListScreen = () => {
   const navigation = useNavigation();
@@ -65,104 +181,26 @@ const InstructorListScreen = () => {
     load(true);
   }, [load]);
 
-  const renderItem = ({ item }) => {
-    const profilePicture = item?.user?.profilePicture || item?.profilePicture;
-    const profilePictureUrl = profilePicture ? getFileUrl(profilePicture) : null;
-
-    const name = item.name || item?.user?.name || 'Instructor';
-    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-
-    const specialty = item.specialty || item.specializations?.[0] || 'Fitness Trainer';
-    const experience = item.experience ? `${item.experience} ${item.experience === 1 ? 'year' : 'years'}` : null;
-    const monthlyRate = item.monthlyRate ? `LKR ${item.monthlyRate}/mo` : null;
-    const isAvailable = item.isAvailable !== false;
-    const acceptingMembers = item.acceptingMembers !== false;
-
-    return (
-      <Card
-        variant="elevated"
-        onPress={() => navigation.navigate('InstructorDetail', { id: item._id })}
-        style={styles.instructorCard}
-      >
-        <View style={styles.cardContent}>
-          <View style={[styles.avatarContainer, { borderRadius: 24, padding: 3, borderWidth: 1, borderColor: colors.glow + '35', backgroundColor: colors.card, ...dynamicTheme.shadows.sm, shadowColor: colors.glow }]}>
-            {profilePictureUrl ? (
-              <Image
-                source={{ uri: profilePictureUrl }}
-                style={styles.avatar}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary + '20' }]}>
-                <Text style={[styles.avatarText, { color: colors.primary }]}>{initials}</Text>
-              </View>
-            )}
-            {isAvailable && (
-              <View style={[styles.availableBadge, { backgroundColor: colors.background, borderColor: colors.background }]}>
-                <MotionView pulse style={[styles.availableDot, { backgroundColor: colors.success }]} />
-              </View>
-            )}
-          </View>
-
-          <View style={styles.detailsContainer}>
-            <View style={styles.nameRow}>
-              <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{name}</Text>
-            </View>
-
-            <View style={styles.specialtyRow}>
-              <Ionicons name="fitness-outline" size={14} color={colors.primary} />
-              <Text style={[styles.specialty, { color: colors.textSecondary }]} numberOfLines={1}>{specialty}</Text>
-            </View>
-
-            {item.bio && (
-              <Text style={[styles.bio, { color: colors.textSecondary }]} numberOfLines={2}>{item.bio}</Text>
-            )}
-
-            <View style={styles.metaRow}>
-              {experience && (
-                <View style={styles.metaItem}>
-                  <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
-                  <Text style={[styles.metaText, { color: colors.textSecondary }]}>{experience}</Text>
-                </View>
-              )}
-              {monthlyRate && (
-                <View style={styles.metaItem}>
-                  <Ionicons name="cash-outline" size={12} color={colors.textSecondary} />
-                  <Text style={[styles.metaText, { color: colors.textSecondary }]}>{monthlyRate}</Text>
-                </View>
-              )}
-              <View style={[styles.acceptingBadge, {
-                backgroundColor: acceptingMembers ? colors.success + '15' : colors.warning + '15'
-              }]}>
-                <Ionicons
-                  name={acceptingMembers ? 'person-add-outline' : 'close-circle-outline'}
-                  size={12}
-                  color={acceptingMembers ? colors.success : colors.warning}
-                />
-                <Text style={[styles.acceptingBadgeText, {
-                  color: acceptingMembers ? colors.success : colors.warning
-                }]}>
-                  {acceptingMembers ? 'Open' : 'Full'}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-        </View>
-      </Card>
-    );
-  };
+  const renderItem = ({ item, index }) => (
+    <InstructorCard
+      item={item}
+      index={index}
+      navigation={navigation}
+      colors={colors}
+      dynamicTheme={dynamicTheme}
+      isDark={isDark}
+    />
+  );
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
     >
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
-      {/* Gradient Header */}
+      {/* ── Header ── */}
       <LinearGradient
         colors={colors.gradients.primary}
         start={{ x: 0, y: 0 }}
@@ -172,6 +210,8 @@ const InstructorListScreen = () => {
         {/* Decorative circles */}
         <View style={styles.headerCircle1} />
         <View style={styles.headerCircle2} />
+        <View style={styles.headerCircle3} />
+
         <View style={styles.headerTop}>
           <BackButton style={styles.backButton} />
           <View style={styles.headerTitleContainer}>
@@ -185,29 +225,38 @@ const InstructorListScreen = () => {
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <FocusSurface style={[styles.searchBar, { backgroundColor: colors.card, borderRadius: 9999 }]}>
-            <Ionicons name="search" size={20} color={colors.textSecondary} />
+          <FocusSurface style={[styles.searchBar, {
+            backgroundColor: isDark ? colors.card + 'E6' : '#FFFFFFEE',
+            borderColor: isDark ? colors.border + '40' : 'transparent',
+          }]}>
+            <View style={[styles.searchIconWrap, { backgroundColor: colors.primary + '15' }]}>
+              <Ionicons name="search" size={16} color={colors.primary} />
+            </View>
             <TextInput
-              placeholder="Search instructors..."
+              placeholder="Search by name or specialty..."
               placeholderTextColor={colors.textTertiary}
               value={query}
               onChangeText={setQuery}
               style={[styles.searchInput, { color: colors.text }]}
             />
             {query.length > 0 && (
-              <TouchableOpacity onPress={() => setQuery('')}>
-                <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+              <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
+                <View style={[styles.clearBtnInner, { backgroundColor: colors.textTertiary + '25' }]}>
+                  <Ionicons name="close" size={14} color={colors.textSecondary} />
+                </View>
               </TouchableOpacity>
             )}
           </FocusSurface>
         </View>
       </LinearGradient>
 
-
+      {/* ── Content ── */}
       {loading && items.length === 0 ? (
-        <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading instructors...</Text>
+        <View style={styles.loadingContainer}>
+          <View style={[styles.loadingSpinner, { borderColor: colors.primary + '20' }]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Finding instructors...</Text>
         </View>
       ) : (
         <FlatList
@@ -215,12 +264,14 @@ const InstructorListScreen = () => {
           keyExtractor={(i) => i._id}
           renderItem={renderItem}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: items.length > 0 ? 100 : 40 }]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           ListEmptyComponent={
-            <View style={[styles.emptyState, { backgroundColor: colors.background }]}>
-              <Ionicons name="people-outline" size={64} color={colors.textTertiary} />
+            <View style={styles.emptyState}>
+              <View style={[styles.emptyIconWrap, { backgroundColor: colors.primary + '10' }]}>
+                <Ionicons name="people-outline" size={48} color={colors.primary + '60'} />
+              </View>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>No instructors found</Text>
               <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
                 {query ? 'Try adjusting your search terms' : 'Check back later for new instructors'}
@@ -231,33 +282,50 @@ const InstructorListScreen = () => {
         />
       )}
 
-      {/* Pagination */}
+      {/* ── Pagination ── */}
       {items.length > 0 && (
-        <View style={[styles.paginationBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+        <View style={[styles.paginationBar, {
+          backgroundColor: isDark ? colors.card + 'F0' : colors.background + 'F8',
+          borderTopColor: colors.border + '30',
+          paddingBottom: Math.max(insets.bottom, 12),
+          ...dynamicTheme.shadows.lg,
+        }]}>
           <TouchableOpacity
             onPress={() => setPage((p) => Math.max(1, p - 1))}
-            style={[styles.pageBtn, { backgroundColor: colors.backgroundSecondary }, page <= 1 && styles.pageBtnDisabled]}
+            style={[styles.pageBtn, {
+              backgroundColor: page <= 1 ? colors.backgroundSecondary : colors.primary + '12',
+              opacity: page <= 1 ? 0.5 : 1,
+            }]}
             disabled={page <= 1}
             activeOpacity={0.7}
           >
             <Ionicons
               name="chevron-back"
-              size={20}
+              size={18}
               color={page <= 1 ? colors.textTertiary : colors.primary}
             />
-            <Text style={[styles.pageBtnText, { color: colors.primary }, page <= 1 && { color: colors.textTertiary }]}>Prev</Text>
+            <Text style={[styles.pageBtnText, { color: page <= 1 ? colors.textTertiary : colors.primary }]}>Prev</Text>
           </TouchableOpacity>
-          <Text style={[styles.pageInfo, { color: colors.textSecondary }]}>Page {page} / {pages}</Text>
+
+          <View style={[styles.pageIndicator, { backgroundColor: colors.primary + '10' }]}>
+            <Text style={[styles.pageInfo, { color: colors.primary }]}>{page}</Text>
+            <Text style={[styles.pageInfoSep, { color: colors.textTertiary }]}>/</Text>
+            <Text style={[styles.pageInfo, { color: colors.textSecondary }]}>{pages}</Text>
+          </View>
+
           <TouchableOpacity
             onPress={() => setPage((p) => Math.min(pages, p + 1))}
-            style={[styles.pageBtn, { backgroundColor: colors.backgroundSecondary }, page >= pages && styles.pageBtnDisabled]}
+            style={[styles.pageBtn, {
+              backgroundColor: page >= pages ? colors.backgroundSecondary : colors.primary + '12',
+              opacity: page >= pages ? 0.5 : 1,
+            }]}
             disabled={page >= pages}
             activeOpacity={0.7}
           >
-            <Text style={[styles.pageBtnText, { color: colors.primary }, page >= pages && { color: colors.textTertiary }]}>Next</Text>
+            <Text style={[styles.pageBtnText, { color: page >= pages ? colors.textTertiary : colors.primary }]}>Next</Text>
             <Ionicons
               name="chevron-forward"
-              size={20}
+              size={18}
               color={page >= pages ? colors.textTertiary : colors.primary}
             />
           </TouchableOpacity>
@@ -271,29 +339,40 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
+  /* ── Header ── */
   headerGradient: {
     paddingBottom: theme.spacing[6],
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
     overflow: 'hidden',
   },
   headerCircle1: {
     position: 'absolute',
-    top: -50,
-    right: -30,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    top: -60,
+    right: -40,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.07)',
   },
   headerCircle2: {
     position: 'absolute',
-    bottom: 20,
-    left: -40,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    bottom: 10,
+    left: -50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  headerCircle3: {
+    position: 'absolute',
+    top: 30,
+    left: '40%',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
   headerTop: {
     flexDirection: 'row',
@@ -305,7 +384,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: theme.borderRadius.full,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -314,186 +393,230 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: theme.typography.fontSize.xl,
-    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: theme.typography.fontSize['2xl'],
+    fontWeight: theme.typography.fontWeight.extrabold,
     color: '#FFFFFF',
     textAlign: 'center',
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: theme.typography.fontSize.sm,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 3,
     textAlign: 'center',
+    letterSpacing: 0.2,
   },
   instructorCountBadge: {
     width: 40,
     height: 40,
     borderRadius: theme.borderRadius.full,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   instructorCountText: {
     fontSize: theme.typography.fontSize.md,
     fontWeight: theme.typography.fontWeight.bold,
     color: '#FFFFFF',
   },
+
+  /* ── Search ── */
   searchContainer: {
     paddingHorizontal: theme.spacing[4],
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    paddingHorizontal: theme.spacing[4],
-    paddingVertical: theme.spacing[3],
+    paddingHorizontal: theme.spacing[3],
+    paddingVertical: Platform.OS === 'ios' ? 12 : 6,
     gap: theme.spacing[2],
+    borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
     elevation: 8,
+  },
+  searchIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   searchInput: {
     flex: 1,
     fontSize: theme.typography.fontSize.md,
     padding: 0,
+    letterSpacing: 0.1,
   },
+  clearBtn: {
+    padding: 2,
+  },
+  clearBtnInner: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  /* ── Loading ── */
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: theme.spacing[4],
   },
+  loadingSpinner: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   loadingText: {
     fontSize: theme.typography.fontSize.md,
+    letterSpacing: 0.2,
   },
+
+  /* ── List ── */
   listContent: {
-    padding: theme.spacing[6],
-    paddingTop: theme.spacing[2],
-    paddingBottom: 100,
+    paddingHorizontal: theme.spacing[4],
+    paddingTop: theme.spacing[4],
   },
-  instructorCard: {
-    marginBottom: theme.spacing[4],
+
+  /* ── Card ── */
+  card: {
     borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
+    padding: theme.spacing[4],
+    marginBottom: theme.spacing[3],
+    borderWidth: 1,
   },
-  cardContent: {
+  cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing[4],
+    gap: theme.spacing[3],
   },
-  avatarContainer: {
+
+  /* Avatar */
+  avatarWrapper: {
     position: 'relative',
   },
+  avatarRing: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    padding: 2.5,
+  },
+  avatarInner: {
+    flex: 1,
+    borderRadius: 30,
+    padding: 1.5,
+    overflow: 'hidden',
+  },
   avatar: {
-    width: 75,
-    height: 75,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: 'rgba(220, 38, 38, 0.2)',
+    width: '100%',
+    height: '100%',
+    borderRadius: 28,
   },
   avatarPlaceholder: {
-    width: 75,
-    height: 75,
-    borderRadius: 20,
+    width: '100%',
+    height: '100%',
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  availableBadge: {
+  statusBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 18,
-    height: 18,
-    borderRadius: theme.borderRadius.full,
+    bottom: -1,
+    right: -1,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 2.5,
   },
-  availableDot: {
+  statusDot: {
     width: 10,
     height: 10,
-    borderRadius: theme.borderRadius.full,
+    borderRadius: 5,
   },
-  detailsContainer: {
+
+  /* Card info */
+  cardInfo: {
     flex: 1,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing[1],
-    gap: theme.spacing[2],
+    gap: 3,
   },
   name: {
-    flex: 1,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     letterSpacing: -0.3,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing[1],
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-  },
-  rating: {
-    fontSize: 13,
-    fontWeight: '700',
   },
   specialtyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing[1],
-    marginBottom: theme.spacing[2],
+    gap: 5,
   },
   specialty: {
     fontSize: theme.typography.fontSize.sm,
     flex: 1,
   },
-  bio: {
-    fontSize: theme.typography.fontSize.sm,
-    marginBottom: theme.spacing[2],
-    lineHeight: theme.typography.lineHeight.relaxed * theme.typography.fontSize.sm,
+  arrowCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  metaRow: {
+
+  /* Bio */
+  bio: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: theme.spacing[2],
+    paddingLeft: theme.spacing[1],
+  },
+
+  /* Divider */
+  divider: {
+    height: 1,
+    marginTop: theme.spacing[3],
+    marginBottom: theme.spacing[3],
+  },
+
+  /* Chips */
+  chipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.spacing[2],
+    alignItems: 'center',
   },
-  metaItem: {
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing[1],
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
   },
-  metaText: {
-    fontSize: theme.typography.fontSize.xs,
+  chipText: {
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 0.1,
   },
-  acceptingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  acceptingBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
+
+  /* ── Empty state ── */
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -501,10 +624,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing[6],
     marginTop: theme.spacing[4],
   },
+  emptyIconWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing[4],
+  },
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
-    marginTop: theme.spacing[4],
     marginBottom: theme.spacing[2],
     textAlign: 'center',
     letterSpacing: -0.5,
@@ -515,6 +645,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     opacity: 0.8,
   },
+
+  /* ── Pagination ── */
   paginationBar: {
     position: 'absolute',
     bottom: 0,
@@ -523,34 +655,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: theme.spacing[4],
+    paddingHorizontal: theme.spacing[4],
+    paddingTop: theme.spacing[3],
     borderTopWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 10,
   },
   pageBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing[1],
+    gap: 4,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
   },
-  pageBtnDisabled: {
-    opacity: 0.5,
-  },
   pageBtnText: {
     fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.medium,
+    fontWeight: theme.typography.fontWeight.semibold,
   },
-  pageBtnTextDisabled: {
+  pageIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 10,
   },
   pageInfo: {
+    fontSize: theme.typography.fontSize.md,
+    fontWeight: theme.typography.fontWeight.bold,
+  },
+  pageInfoSep: {
     fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.medium,
+    fontWeight: theme.typography.fontWeight.regular,
   },
 });
 

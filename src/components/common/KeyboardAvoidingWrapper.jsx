@@ -26,7 +26,7 @@ import { theme } from '../../styles/theme';
  * @param {Function} props.onRefresh - Callback for pull-to-refresh
  * @param {number} props.keyboardVerticalOffset - Additional offset for keyboard (default: 0)
  * @param {boolean} props.scrollEnabled - Whether scrolling is enabled (default: true)
- * @param {string} props.behavior - KeyboardAvoidingView behavior (default: 'padding' on iOS, 'height' on Android)
+ * @param {string} props.behavior - KeyboardAvoidingView behavior (default: 'padding' on iOS; Android uses native window keyboard handling)
  */
 export default function KeyboardAvoidingWrapper({
     children,
@@ -42,8 +42,10 @@ export default function KeyboardAvoidingWrapper({
     keyboardShouldPersistTaps = 'handled',
     keyboardDismissMode,
 }) {
-    // Determine behavior based on platform
-    const keyboardBehavior = behavior || (Platform.OS === 'ios' ? 'padding' : 'height');
+    // Android uses the activity's native soft-input mode. Applying a second
+    // JavaScript-driven height change can make the focused input lose focus
+    // while the keyboard is opening.
+    const keyboardBehavior = behavior ?? (Platform.OS === 'ios' ? 'padding' : undefined);
     const dismissMode = keyboardDismissMode || (Platform.OS === 'ios' ? 'interactive' : 'on-drag');
 
     // Calculate offset - iOS needs more offset due to navigation headers
@@ -61,7 +63,9 @@ export default function KeyboardAvoidingWrapper({
                 keyboardShouldPersistTaps={keyboardShouldPersistTaps}
                 keyboardDismissMode={dismissMode}
                 contentInsetAdjustmentBehavior="automatic"
-                automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+                // KeyboardAvoidingView handles this above. Enabling both makes
+                // iOS apply competing keyboard inset/layout updates.
+                automaticallyAdjustKeyboardInsets={false}
                 showsVerticalScrollIndicator={showsVerticalScrollIndicator}
                 scrollEnabled={scrollEnabled}
                 bounces={true}

@@ -11,6 +11,7 @@ export default function Card({
   style,
   variant = 'default',
   padding = 'md',
+  animated = true,
 }) {
   const Container = onPress ? ScaleTouchable : View;
   const { theme: dynamicTheme } = useTheme();
@@ -61,7 +62,7 @@ export default function Card({
         style,
       ]}
     >
-      {Boolean(variant === 'elevated') && (
+      {Boolean(animated && variant === 'elevated') && (
         <MotionView pulse pointerEvents="none" style={[StyleSheet.absoluteFillObject, {
           borderRadius: StyleSheet.flatten(style)?.borderRadius ?? theme.borderRadius.xl,
           borderWidth: 1, borderColor: colors.glow + '25',

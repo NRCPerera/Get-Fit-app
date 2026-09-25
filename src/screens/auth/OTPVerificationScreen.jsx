@@ -18,7 +18,7 @@ const OTPVerificationScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.auth);
-  
+
   const { email } = route.params || {};
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [resending, setResending] = useState(false);
@@ -34,7 +34,7 @@ const OTPVerificationScreen = () => {
 
   const handleOTPChange = (index, value) => {
     if (value && !/^\d+$/.test(value)) return;
-    
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -52,7 +52,7 @@ const OTPVerificationScreen = () => {
 
   const handleVerify = async () => {
     const otpCode = otp.join('');
-    
+
     if (otpCode.length !== 6) {
       Alert.alert('Error', 'Please enter the complete 6-digit OTP code');
       return;
@@ -102,12 +102,12 @@ const OTPVerificationScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
       style={[screenStyles.container, { backgroundColor: colors.background }]}
     >
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -182,10 +182,10 @@ const OTPVerificationScreen = () => {
                   { color: colors.primary },
                   (resending || countdown > 0) && { color: colors.textTertiary }
                 ]}>
-                  {resending 
-                    ? 'Sending...' 
-                    : countdown > 0 
-                      ? `Resend in ${countdown}s` 
+                  {resending
+                    ? 'Sending...'
+                    : countdown > 0
+                      ? `Resend in ${countdown}s`
                       : 'Resend OTP'}
                 </Text>
               </TouchableOpacity>

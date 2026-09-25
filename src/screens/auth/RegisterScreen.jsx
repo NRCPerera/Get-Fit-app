@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { Alert, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { CommonActions } from '@react-navigation/native';
@@ -106,6 +106,9 @@ const RegisterScreen = () => {
     <KeyboardAvoidingWrapper
       style={[screenStyles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.scroll}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardShouldPersistTaps="always"
+      keyboardDismissMode="none"
     >
       <View style={styles.content}>
         {/* Header */}
@@ -124,7 +127,7 @@ const RegisterScreen = () => {
           onSubmit={handleSubmit}
         >
           {({ handleChange, handleBlur, handleSubmit, setFieldValue, values, errors, touched, isSubmitting, status, setStatus }) => (
-            <Card variant="elevated" style={styles.formCard}>
+            <Card variant="elevated" animated={false} style={styles.formCard}>
               <Input
                 label="Full Name *"
                 placeholder="John Doe"
@@ -140,6 +143,7 @@ const RegisterScreen = () => {
                 error={touched.name && errors.name ? errors.name : ''}
                 leftIcon="person-outline"
                 autoCapitalize="words"
+                focusFeedback={false}
               />
 
               <Input
@@ -158,6 +162,7 @@ const RegisterScreen = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 leftIcon="mail-outline"
+                focusFeedback={false}
               />
 
               <Input
@@ -175,6 +180,7 @@ const RegisterScreen = () => {
                 error={touched.phone && errors.phone ? errors.phone : ''}
                 keyboardType="phone-pad"
                 leftIcon="call-outline"
+                focusFeedback={false}
               />
 
               <DateSelectInput
@@ -253,6 +259,7 @@ const RegisterScreen = () => {
                 showPasswordToggle
                 leftIcon="lock-closed-outline"
                 helperText="Minimum 8 characters"
+                focusFeedback={false}
               />
 
               <Input
@@ -271,6 +278,7 @@ const RegisterScreen = () => {
                 secureTextEntry
                 showPasswordToggle
                 leftIcon="lock-closed-outline"
+                focusFeedback={false}
               />
 
               {Boolean(status?.error) && (

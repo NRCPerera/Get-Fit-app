@@ -22,6 +22,9 @@ export default function Input({
   inputStyle,
   size = 'md',
   showPasswordToggle = false,
+  focusFeedback = true,
+  onFocus,
+  onBlur,
 }) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -114,8 +117,18 @@ export default function Input({
           multiline={multiline}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onFocus={(event) => {
+            if (focusFeedback) {
+              setIsFocused(true);
+            }
+            onFocus?.(event);
+          }}
+          onBlur={(event) => {
+            if (focusFeedback) {
+              setIsFocused(false);
+            }
+            onBlur?.(event);
+          }}
         />
         {Boolean(isPassword) && (
           <TouchableOpacity

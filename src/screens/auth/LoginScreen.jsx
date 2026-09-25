@@ -1,11 +1,11 @@
-import { ScaleTouchable as TouchableOpacity, MotionView } from '../../components/common/Motion';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
+  TouchableOpacity,
   StyleSheet,
   Alert,
+  Platform,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -81,20 +81,22 @@ const LoginScreen = () => {
     <KeyboardAvoidingWrapper
       style={[screenStyles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.scrollContainer}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardShouldPersistTaps="always"
+      keyboardDismissMode="none"
     >
       <View style={styles.content}>
-        <MotionView pulse pointerEvents="none" style={StyleSheet.absoluteFillObject}><LinearGradient colors={[colors.primary + '18', colors.background, colors.primary + '08']} style={StyleSheet.absoluteFillObject} /></MotionView>
         {/* Header */}
         <View style={styles.header}>
-          <MotionView pulse style={[styles.logoContainer, { backgroundColor: colors.primary + '15' }]}>
+          <View style={[styles.logoContainer, { backgroundColor: colors.primary + '15' }]}>
             <Ionicons name="fitness" size={48} color={colors.primary} />
-          </MotionView>
+          </View>
           <Text style={[headerStyles.title, { color: colors.text }]}>Welcome Back</Text>
           <Text style={[headerStyles.subtitle, { color: colors.textSecondary }]}>Sign in to continue your fitness journey</Text>
         </View>
 
         {/* Form Card */}
-        <Card variant="elevated" style={[styles.formCard, { backgroundColor: colors.card }]}>
+        <Card variant="elevated" animated={false} style={[styles.formCard, { backgroundColor: colors.card }]}>
           <Input
             label="Email Address"
             placeholder="Enter your email"
@@ -108,6 +110,7 @@ const LoginScreen = () => {
             keyboardType="email-address"
             autoCapitalize="none"
             leftIcon="mail-outline"
+            focusFeedback={false}
             error={authErrorMessage.toLowerCase().includes('email') ? authErrorMessage : ''}
           />
 
@@ -124,6 +127,7 @@ const LoginScreen = () => {
             secureTextEntry
             showPasswordToggle
             leftIcon="lock-closed-outline"
+            focusFeedback={false}
             error={authErrorMessage.toLowerCase().includes('password') ? authErrorMessage : ''}
           />
 

@@ -250,7 +250,7 @@ const ForgotPasswordScreen = () => {
         <View style={styles.header}>
           <BackButton
             style={styles.backButton}
-           
+
             color={colors.text}
             onPress={handleBack}
           />

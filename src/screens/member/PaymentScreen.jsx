@@ -137,7 +137,7 @@ const PaymentScreen = () => {
         {/* Decorative circles */}
         <View style={styles.headerCircle1} />
         <View style={styles.headerCircle2} />
-        
+
         <View style={styles.headerTop}>
           <BackButton style={styles.backButton} />
           <View style={styles.headerTitleContainer}>

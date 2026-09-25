@@ -96,7 +96,7 @@ const ProgressTrackingScreen = () => {
       <View style={[styles.measurementCard, { backgroundColor: colors.surface }]}>
         <View style={styles.measurementHeader}>
           <Text style={[styles.measurementLabel, { color: colors.textSecondary }]}>{label}</Text>
-          {showProgress && progressValue !== null && (
+          {Boolean(showProgress && progressValue !== null) && (
             <View style={[styles.progressBadge, { backgroundColor: getProgressColor(progressValue) + '20' }]}>
               <Ionicons
                 name={getProgressIcon(progressValue)}
@@ -114,7 +114,7 @@ const ProgressTrackingScreen = () => {
             <Text style={[styles.valueNumber, { color: colors.text }]}>{current.toFixed(1)}</Text>
             <Text style={[styles.valueUnit, { color: colors.textSecondary }]}>{unit}</Text>
           </View>
-          {showProgress && previous !== null && previous !== undefined && (
+          {Boolean(showProgress && previous !== null && previous !== undefined) && (
             <View style={styles.previousValue}>
               <Text style={[styles.previousLabel, { color: colors.textSecondary }]}>Previous</Text>
               <Text style={[styles.previousNumber, { color: colors.textSecondary }]}>{previous.toFixed(1)} {unit}</Text>
@@ -166,7 +166,7 @@ const ProgressTrackingScreen = () => {
         </View>
 
         {/* Quick Stats */}
-        {current && (
+        {Boolean(current) && (
           <View style={styles.quickStats}>
             <View style={styles.quickStatItem}>
               <Text style={styles.quickStatValue}>{current.weight?.toFixed(1) || '—'}</Text>
@@ -212,7 +212,7 @@ const ProgressTrackingScreen = () => {
           </View>
         ) : (
           <>
-            {message && (
+            {Boolean(message) && (
               <View style={[styles.messageCard, { backgroundColor: colors.primary + '10' }]}>
                 <Ionicons name="information-circle" size={20} color={colors.primary} />
                 <Text style={[styles.messageText, { color: colors.text }]}>{message}</Text>
@@ -222,7 +222,7 @@ const ProgressTrackingScreen = () => {
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Current Measurements</Text>
               <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-                {current && formatDate(current.measurementDate)}
+                {Boolean(current) && formatDate(current.measurementDate)}
               </Text>
             </View>
 
@@ -308,7 +308,7 @@ const ProgressTrackingScreen = () => {
                 unit="cm"
               />
 
-              {current.bodyFatPercentage && (
+              {Boolean(current.bodyFatPercentage) && (
                 <MeasurementCard
                   label="Body Fat %"
                   current={current.bodyFatPercentage}
@@ -319,7 +319,7 @@ const ProgressTrackingScreen = () => {
               )}
             </View>
 
-            {history.length > 0 && (
+            {Boolean(history.length > 0) && (
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Measurement History</Text>
                 <View style={styles.historyContainer}>
@@ -334,7 +334,7 @@ const ProgressTrackingScreen = () => {
                         <Text style={[styles.historyWeight, { color: colors.text }]}>
                           {measurement.weight.toFixed(1)} kg
                         </Text>
-                        {measurement.waist && (
+                        {Boolean(measurement.waist) && (
                           <Text style={[styles.historyMeasurement, { color: colors.textSecondary }]}>
                             Waist: {measurement.waist.toFixed(1)} cm
                           </Text>

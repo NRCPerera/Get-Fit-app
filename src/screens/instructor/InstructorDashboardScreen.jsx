@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, I
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 import { instructorAPI } from '../../api/instructor.api';
 import { scheduleAPI } from '../../api/schedule.api';
 import { getUnreadCount } from '../../api/message.api';
@@ -15,6 +14,7 @@ import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
 import { getFileUrl } from '../../utils/helpers';
 import { screenStyles, headerStyles } from '../../styles/shared';
+import { addNotificationReceivedListener } from '../../services/pushNotifications';
 
 const InstructorDashboardScreen = () => {
   const navigation = useNavigation();
@@ -94,14 +94,25 @@ const InstructorDashboardScreen = () => {
 
   // Listen for push notifications to update unread count
   useEffect(() => {
-    const subscription = Notifications.addNotificationReceivedListener(notification => {
-      const data = notification.request.content.data;
-      if (data?.type === 'message') {
-        fetchUnreadMessages();
-      }
-    });
+    let subscription;
+    let cancelled = false;
 
-    return () => subscription.remove();
+    addNotificationReceivedListener(notification => {
+        const data = notification.request.content.data;
+        if (data?.type === 'message') {
+          fetchUnreadMessages();
+        }
+      })
+      .then((nextSubscription) => {
+        if (cancelled) nextSubscription?.remove();
+        else subscription = nextSubscription;
+      })
+      .catch((error) => console.warn('Unable to listen for notifications:', error));
+
+    return () => {
+      cancelled = true;
+      subscription?.remove();
+    };
   }, [fetchUnreadMessages]);
 
   // Handle app state changes
@@ -183,7 +194,7 @@ const InstructorDashboardScreen = () => {
             style={[styles.notificationButton, { backgroundColor: colors.card }]}
           >
             <Ionicons name="chatbubbles-outline" size={22} color={colors.text} />
-            {unreadMessages > 0 && (
+            {Boolean(unreadMessages > 0) && (
               <View style={[styles.messageBadge, { backgroundColor: colors.primary }]}>
                 <Text style={styles.messageBadgeText}>
                   {unreadMessages > 99 ? '99+' : unreadMessages}
@@ -197,7 +208,7 @@ const InstructorDashboardScreen = () => {
           >
             <Ionicons name="notifications-outline" size={24} color={colors.text} />
           </TouchableOpacity>
-          {profile?.profilePicture && (
+          {Boolean(profile?.profilePicture) && (
             <Image
               source={{ uri: getFileUrl(profile.profilePicture) || profile.profilePicture }}
               style={styles.avatar}
@@ -393,14 +404,14 @@ const InstructorDashboardScreen = () => {
                 <View style={styles.listItemContent}>
                   <Text style={[styles.listItemTitle, { color: colors.text }]}>{schedule.name || 'Untitled Schedule'}</Text>
                   <View style={styles.scheduleMeta}>
-                    {schedule.scheduleType && (
+                    {Boolean(schedule.scheduleType) && (
                       <View style={[styles.badge, { backgroundColor: colors.primary + '15' }]}>
                         <Text style={[styles.badgeText, { color: colors.primary }]}>
                           {schedule.scheduleType === '1-day' ? '1 Day' : schedule.scheduleType === '2-day' ? '2 Days' : '3 Days'}
                         </Text>
                       </View>
                     )}
-                    {schedule.exercises && (
+                    {Boolean(schedule.exercises) && (
                       <Text style={[styles.listItemSubtitle, { color: colors.textSecondary }]}>
                         {schedule.exercises.length} {schedule.exercises.length === 1 ? 'exercise' : 'exercises'}
                       </Text>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +17,8 @@ const CreateNutritionPlanScreen = () => {
   const route = useRoute();
   const { theme: dynamicTheme, isDark } = useTheme();
   const colors = dynamicTheme.colors;
-  const { clientId, clientName } = route.params || {};
+  const { clientId, clientName, planId } = route.params || {};
+  const isEditing = Boolean(planId);
 
   // If clientId is provided, it's an instructor creating for a client
   // Otherwise, it's a member creating for themselves
@@ -35,7 +36,57 @@ const CreateNutritionPlanScreen = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [loadingPlan, setLoadingPlan] = useState(isEditing);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing) return;
+
+    let isMounted = true;
+
+    const loadPlan = async () => {
+      try {
+        const response = await nutritionAPI.getPlanById(planId);
+        const plan = response?.data?.plan || response?.data || response;
+        if (!isMounted) return;
+
+        setTitle(plan?.title || '');
+        setDescription(plan?.description || '');
+        setMeals((plan?.meals || []).map((meal) => ({
+          mealType: meal.mealType || 'snack',
+          name: meal.name || '',
+          time: meal.time || '',
+          foods: (meal.foods || []).map((food) => ({
+            name: food.name || '',
+            quantity: food.quantity || 0,
+            unit: food.unit || '',
+            calories: food.calories || 0,
+            protein: food.protein || 0,
+            carbs: food.carbs || 0,
+            fats: food.fats || 0,
+          })),
+          instructions: meal.instructions || '',
+        })));
+        setDailyCalories(plan?.dailyCalories?.toString() || '');
+        setDailyProtein(plan?.dailyProtein?.toString() || '');
+        setDailyCarbs(plan?.dailyCarbs?.toString() || '');
+        setDailyFats(plan?.dailyFats?.toString() || '');
+        setDietaryRestrictions(plan?.dietaryRestrictions || []);
+        setStartDate(plan?.startDate ? plan.startDate.slice(0, 10) : '');
+        setEndDate(plan?.endDate ? plan.endDate.slice(0, 10) : '');
+        setNotes(plan?.notes || '');
+      } catch (error) {
+        Alert.alert('Error', error?.response?.data?.message || 'Failed to load nutrition plan', [
+          { text: 'OK', onPress: () => navigation.goBack() },
+        ]);
+      } finally {
+        if (isMounted) setLoadingPlan(false);
+      }
+    };
+
+    loadPlan();
+    return () => { isMounted = false; };
+  }, [isEditing, navigation, planId]);
 
   const addMeal = (mealType) => {
     setMeals([...meals, {
@@ -138,56 +189,62 @@ const CreateNutritionPlanScreen = () => {
         // Otherwise, backend will use the logged-in user's ID
         ...(isForClient && clientId ? { userId: clientId } : {}),
         title: title.trim(),
-        description: description.trim() || undefined,
+        description: description.trim() || null,
         meals: meals.map(meal => ({
           mealType: meal.mealType,
-          name: meal.name.trim() || undefined,
-          time: meal.time.trim() || undefined,
+            name: meal.name.trim() || null,
+            time: meal.time.trim() || null,
           foods: meal.foods.map(food => ({
             name: food.name.trim(),
             quantity: food.quantity || 0,
-            unit: food.unit.trim() || undefined,
+              unit: food.unit.trim() || null,
             calories: food.calories || 0,
             protein: food.protein || 0,
             carbs: food.carbs || 0,
             fats: food.fats || 0
           })),
-          instructions: meal.instructions.trim() || undefined
+          instructions: meal.instructions.trim() || null
         })),
-        dailyCalories: dailyCalories ? parseFloat(dailyCalories) : undefined,
-        dailyProtein: dailyProtein ? parseFloat(dailyProtein) : undefined,
-        dailyCarbs: dailyCarbs ? parseFloat(dailyCarbs) : undefined,
-        dailyFats: dailyFats ? parseFloat(dailyFats) : undefined,
-        dietaryRestrictions: dietaryRestrictions.length > 0 ? dietaryRestrictions : undefined,
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined,
-        notes: notes.trim() || undefined
+        dailyCalories: dailyCalories ? parseFloat(dailyCalories) : null,
+        dailyProtein: dailyProtein ? parseFloat(dailyProtein) : null,
+        dailyCarbs: dailyCarbs ? parseFloat(dailyCarbs) : null,
+        dailyFats: dailyFats ? parseFloat(dailyFats) : null,
+        dietaryRestrictions,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        notes: notes.trim() || null
       };
 
-      await nutritionAPI.createPlan(payload);
-      Alert.alert('Success', 'Nutrition plan created successfully', [
+      if (isEditing) {
+        await nutritionAPI.updatePlan(planId, payload);
+      } else {
+        await nutritionAPI.createPlan(payload);
+      }
+      Alert.alert('Success', `Nutrition plan ${isEditing ? 'updated' : 'created'} successfully`, [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (error) {
-      Alert.alert('Error', error?.response?.data?.message || 'Failed to create nutrition plan');
+      Alert.alert('Error', error?.response?.data?.message || `Failed to ${isEditing ? 'update' : 'create'} nutrition plan`);
     } finally {
       setSaving(false);
     }
   };
 
-  if (saving) {
+  if (loadingPlan || saving) {
     return <Loading />;
   }
 
   return (
     <KeyboardAvoidingWrapper style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Create Nutrition Plan</Text>
-        {isForClient && clientName && (
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{isEditing ? 'Edit Nutrition Plan' : 'Create Nutrition Plan'}</Text>
+        {Boolean(isForClient && clientName) && (
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>For: {clientName}</Text>
         )}
-        {!isForClient && (
-          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Create your personal nutrition plan</Text>
+        {Boolean(!isForClient) && (
+          <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+            {isEditing ? 'Update your personal nutrition plan' : 'Create your personal nutrition plan'}
+          </Text>
         )}
       </View>
 
@@ -455,7 +512,7 @@ const CreateNutritionPlanScreen = () => {
 
       <View style={styles.buttonContainer}>
         <Button
-          title="Create Plan"
+          title={isEditing ? 'Save Changes' : 'Create Plan'}
           onPress={handleSave}
           disabled={saving}
         />

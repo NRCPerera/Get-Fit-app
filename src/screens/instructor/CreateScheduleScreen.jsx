@@ -310,7 +310,7 @@ const CreateScheduleScreen = () => {
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>
-              {(item.setReps || []).length > 1 && (
+              {Boolean((item.setReps || []).length > 1) && (
                 <TouchableOpacity
                   onPress={() => removeSetRep(index, srIndex)}
                   style={styles.removeSetRepButton}
@@ -456,7 +456,7 @@ const CreateScheduleScreen = () => {
             />
           </View>
         </View>
-        {!isTemplate && (
+        {Boolean(!isTemplate) && (
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text }]}>Assign to Client (Optional)</Text>
             <TouchableOpacity
@@ -484,7 +484,7 @@ const CreateScheduleScreen = () => {
             <Text style={[styles.dateButtonText, { color: colors.text }, !startDate && { color: colors.textSecondary }]}>
               {startDate || 'Select start date'}
             </Text>
-            {startDate && (
+            {Boolean(startDate) && (
               <TouchableOpacity
                 onPress={(e) => {
                   e.stopPropagation();
@@ -507,7 +507,7 @@ const CreateScheduleScreen = () => {
             <Text style={[styles.dateButtonText, { color: colors.text }, !endDate && { color: colors.textSecondary }]}>
               {endDate || 'Select end date'}
             </Text>
-            {endDate && (
+            {Boolean(endDate) && (
               <TouchableOpacity
                 onPress={(e) => {
                   e.stopPropagation();
@@ -533,7 +533,7 @@ const CreateScheduleScreen = () => {
             <Text style={[styles.addButtonText, { color: colors.white }]}>Add Exercise</Text>
           </TouchableOpacity>
         </View>
-        {scheduleType !== '1-day' && (
+        {Boolean(scheduleType !== '1-day') && (
           <View style={styles.dayTabs}>
             {Array.from({ length: scheduleType === '2-day' ? 2 : 3 }, (_, i) => i + 1).map(day => (
               <TouchableOpacity

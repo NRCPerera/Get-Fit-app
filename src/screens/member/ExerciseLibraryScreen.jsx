@@ -350,7 +350,7 @@ const ExerciseLibraryScreen = () => {
                     style={styles.thumbnail}
                     resizeMode="cover"
                   />
-                  {item.videoUrl && (
+                  {Boolean(item.videoUrl) && (
                     <TouchableOpacity
                       style={styles.playOverlay}
                       onPress={() => handlePlayVideo(item)}
@@ -444,7 +444,7 @@ const ExerciseLibraryScreen = () => {
                       {item.category || 'Exercise'}
                     </Text>
                   </View>
-                  {item.duration && (
+                  {Boolean(item.duration) && (
                     <View style={styles.metaItem}>
                       <Ionicons name="time" size={12} color={colors.textSecondary} />
                       <Text style={[styles.metaText, { color: colors.textSecondary }]}>
@@ -453,7 +453,7 @@ const ExerciseLibraryScreen = () => {
                     </View>
                   )}
                 </View>
-                {item.difficulty && (
+                {Boolean(item.difficulty) && (
                   <LinearGradient
                     colors={
                       isDark
@@ -498,7 +498,7 @@ const ExerciseLibraryScreen = () => {
     >
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
-      {selectedVideo && (
+      {Boolean(selectedVideo) && (
         <VideoPlayerModal
           visible={!!selectedVideo}
           videoUrl={selectedVideo.videoUrl}
@@ -534,7 +534,7 @@ const ExerciseLibraryScreen = () => {
               onChangeText={handleSearchChange}
               style={[styles.searchInput, { color: colors.text }]}
             />
-            {searchQuery.length > 0 && (
+            {Boolean(searchQuery.length > 0) && (
               <TouchableOpacity onPress={() => { setSearchQuery(''); setDebouncedQuery(''); }}>
                 <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
               </TouchableOpacity>

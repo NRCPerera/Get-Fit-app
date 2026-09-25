@@ -16,13 +16,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
-import * as Notifications from 'expo-notifications';
 
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
 import { getFileUrl } from '../../utils/helpers';
 import { getConversations } from '../../api/message.api';
 import BackButton from '../../components/common/BackButton';
+import { addNotificationReceivedListener } from '../../services/pushNotifications';
 
 const MessagesScreen = ({ navigation }) => {
   const [conversations, setConversations] = useState([]);
@@ -71,17 +71,26 @@ const MessagesScreen = ({ navigation }) => {
 
   // Listen for push notifications to trigger instant refresh
   useEffect(() => {
-    const subscription = Notifications.addNotificationReceivedListener(notification => {
-      const data = notification.request.content.data;
+    let subscription;
+    let cancelled = false;
 
-      // If it's a message notification, refresh the conversation list
-      if (data?.type === 'message' && isFocused.current) {
-        fetchConversations(1, false, true);
-      }
-    });
+    addNotificationReceivedListener(notification => {
+        const data = notification.request.content.data;
+
+        // If it's a message notification, refresh the conversation list
+        if (data?.type === 'message' && isFocused.current) {
+          fetchConversations(1, false, true);
+        }
+      })
+      .then((nextSubscription) => {
+        if (cancelled) nextSubscription?.remove();
+        else subscription = nextSubscription;
+      })
+      .catch((error) => console.warn('Unable to listen for notifications:', error));
 
     return () => {
-      subscription.remove();
+      cancelled = true;
+      subscription?.remove();
     };
   }, []);
 
@@ -192,7 +201,7 @@ const MessagesScreen = ({ navigation }) => {
               </Text>
             </LinearGradient>
           )}
-          {item.otherParticipant?.role === 'instructor' && (
+          {Boolean(item.otherParticipant?.role === 'instructor') && (
             <View style={[styles.instructorBadge, { backgroundColor: colors.warning }]}>
               <Ionicons name="star" size={10} color="#FFF" />
             </View>
@@ -216,7 +225,7 @@ const MessagesScreen = ({ navigation }) => {
             >
               {item.lastMessage?.content || 'No messages yet'}
             </Text>
-            {hasUnread && (
+            {Boolean(hasUnread) && (
               <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]}>
                 <Text style={styles.unreadCount}>
                   {item.unreadCount > 99 ? '99+' : item.unreadCount}
@@ -225,7 +234,7 @@ const MessagesScreen = ({ navigation }) => {
             )}
           </View>
 
-          {item.otherParticipant?.role === 'instructor' && item.otherParticipant?.specializations && (
+          {Boolean(item.otherParticipant?.role === 'instructor' && item.otherParticipant?.specializations) && (
             <View style={styles.specializationsContainer}>
               {item.otherParticipant.specializations.slice(0, 2).map((spec, index) => (
                 <View key={index} style={[styles.specializationTag, { backgroundColor: colors.primaryLight + '20' }]}>
@@ -255,7 +264,7 @@ const MessagesScreen = ({ navigation }) => {
           ? 'Subscribe to an instructor to start messaging them!'
           : 'Your clients will appear here once they subscribe to you.'}
       </Text>
-      {user?.role === 'member' && (
+      {Boolean(user?.role === 'member') && (
         <TouchableOpacity
           style={styles.browseButton}
           onPress={() => navigation.navigate('Instructors')}

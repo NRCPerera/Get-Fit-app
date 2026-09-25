@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
@@ -119,7 +119,7 @@ const DateSelectInput = ({
 
     return (
         <View style={styles.container}>
-            {label && <Text style={[styles.label, { color: colors.text }, labelStyle]}>{label}</Text>}
+            {Boolean(label) && <Text style={[styles.label, { color: colors.text }, labelStyle]}>{label}</Text>}
 
             <View style={styles.selectorsContainer}>
                 {/* Year Selector */}
@@ -156,7 +156,7 @@ const DateSelectInput = ({
                 </TouchableOpacity>
             </View>
 
-            {error && <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>}
+            {Boolean(error) && <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>}
 
             <PickerModal
                 visible={showYearPicker}

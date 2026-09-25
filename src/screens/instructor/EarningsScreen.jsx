@@ -281,7 +281,7 @@ const EarningsScreen = () => {
         )}
       </View>
 
-      {monthlyBreakdown.length > 0 && (
+      {Boolean(monthlyBreakdown.length > 0) && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Monthly Breakdown</Text>
           {monthlyBreakdown.map((month, index) => (
@@ -295,7 +295,7 @@ const EarningsScreen = () => {
                   <Ionicons name="fitness-outline" size={16} color={colors.textSecondary} />
                   <Text style={[styles.monthDetailText, { color: colors.textSecondary }]}>{month.sessions} {month.sessions === 1 ? 'payment' : 'payments'}</Text>
                 </View>
-                {month.sessions > 0 && (
+                {Boolean(month.sessions > 0) && (
                   <View style={styles.monthDetailItem}>
                     <Ionicons name="cash-outline" size={16} color={colors.textSecondary} />
                     <Text style={[styles.monthDetailText, { color: colors.textSecondary }]}>

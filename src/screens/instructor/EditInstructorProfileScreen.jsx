@@ -520,7 +520,7 @@ const EditInstructorProfileScreen = () => {
                 >
                   {spec.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
                 </Text>
-                {isSelected && (
+                {Boolean(isSelected) && (
                   <Ionicons name="checkmark-circle" size={18} color={colors.white} />
                 )}
               </TouchableOpacity>
@@ -569,9 +569,9 @@ const EditInstructorProfileScreen = () => {
                 </View>
               )}
             </TouchableOpacity>
-            {beforePhotoUri && (
+            {Boolean(beforePhotoUri) && (
               <View style={styles.transformationPhotoActions}>
-                {beforePhoto && !beforePhotoUri?.startsWith('http') && (
+                {Boolean(beforePhoto && !beforePhotoUri?.startsWith('http')) && (
                   <TouchableOpacity
                     style={[styles.uploadButton, { backgroundColor: colors.primary }]}
                     onPress={() => uploadTransformationPhoto('before')}
@@ -611,9 +611,9 @@ const EditInstructorProfileScreen = () => {
                 </View>
               )}
             </TouchableOpacity>
-            {afterPhotoUri && (
+            {Boolean(afterPhotoUri) && (
               <View style={styles.transformationPhotoActions}>
-                {afterPhoto && !afterPhotoUri?.startsWith('http') && (
+                {Boolean(afterPhoto && !afterPhotoUri?.startsWith('http')) && (
                   <TouchableOpacity
                     style={[styles.uploadButton, { backgroundColor: colors.primary }]}
                     onPress={() => uploadTransformationPhoto('after')}

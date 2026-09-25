@@ -13,7 +13,7 @@ export default function Loading({ inline = false, style }) {
         <MotionView pulse style={[styles.icon, { backgroundColor: theme.colors.primary + '12' }, inline && { width: 36, height: 36 }]}>
           <Ionicons name="fitness" size={inline ? 22 : 36} color={theme.colors.primary} />
         </MotionView>
-        {!inline && <Text style={[styles.text, { color: theme.colors.textSecondary }]}>Getting things ready...</Text>}
+        {Boolean(!inline) && <Text style={[styles.text, { color: theme.colors.textSecondary }]}>Getting things ready...</Text>}
       </MotionView>
     </View>
   );

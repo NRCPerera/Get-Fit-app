@@ -83,7 +83,7 @@ const ClientProgressScreen = () => {
       <View style={[styles.measurementCard, { backgroundColor: colors.card }]}>
         <View style={styles.measurementHeader}>
           <Text style={[styles.measurementLabel, { color: colors.textSecondary }]}>{label}</Text>
-          {progressValue !== null && (
+          {Boolean(progressValue !== null) && (
             <View style={[styles.progressBadge, { backgroundColor: getProgressColor(progressValue) + '20' }]}>
               <Ionicons
                 name={getProgressIcon(progressValue)}
@@ -139,7 +139,7 @@ const ClientProgressScreen = () => {
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Latest Measurements</Text>
             <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-              {latest && formatDate(latest.measurementDate)}
+              {Boolean(latest) && formatDate(latest.measurementDate)}
             </Text>
           </View>
 
@@ -214,7 +214,7 @@ const ClientProgressScreen = () => {
               unit="cm"
             />
 
-            {latest.bodyFatPercentage && (
+            {Boolean(latest.bodyFatPercentage) && (
               <MeasurementCard
                 label="Body Fat %"
                 current={latest.bodyFatPercentage}
@@ -224,7 +224,7 @@ const ClientProgressScreen = () => {
             )}
           </View>
 
-          {measurements && measurements.length > 0 && (
+          {Boolean(measurements && measurements.length > 0) && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Measurement History</Text>
               <View style={styles.historyContainer}>
@@ -239,7 +239,7 @@ const ClientProgressScreen = () => {
                       <Text style={[styles.historyWeight, { color: colors.text }]}>
                         {measurement.weight.toFixed(1)} kg
                       </Text>
-                      {measurement.waist && (
+                      {Boolean(measurement.waist) && (
                         <Text style={[styles.historyMeasurement, { color: colors.textSecondary }]}>
                           Waist: {measurement.waist.toFixed(1)} cm
                         </Text>

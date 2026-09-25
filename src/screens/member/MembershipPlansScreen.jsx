@@ -453,7 +453,7 @@ const MembershipPlansScreen = () => {
               {activeMembership ? activeMembership.planName : 'No Active Plan'}
             </Text>
           </View>
-          {activeMembership && (
+          {Boolean(activeMembership) && (
             <View style={styles.activeBadge}>
               <Text style={styles.activeBadgeText}>Active</Text>
             </View>
@@ -483,7 +483,7 @@ const MembershipPlansScreen = () => {
         </View>
 
         {/* Processing State */}
-        {processingPayment && !paymentCompleted && !showWebView && (
+        {Boolean(processingPayment && !paymentCompleted && !showWebView) && (
           <Card variant="elevated" style={styles.stateCard}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={[styles.stateTitle, { color: colors.text }]}>Processing payment...</Text>
@@ -494,7 +494,7 @@ const MembershipPlansScreen = () => {
         )}
 
         {/* Success State */}
-        {paymentCompleted && (
+        {Boolean(paymentCompleted) && (
           <Card variant="elevated" style={styles.stateCard}>
             <View style={styles.successIcon}>
               <Ionicons name="checkmark-circle" size={64} color={colors.success} />
@@ -543,7 +543,7 @@ const MembershipPlansScreen = () => {
               <Text style={[styles.webViewTitle, { color: colors.text }]}>PayHere Payment</Text>
               <View style={styles.webViewCloseButton} />
             </View>
-            {webViewPaymentUrl && webViewPaymentParams && (
+            {Boolean(webViewPaymentUrl && webViewPaymentParams) && (
               <PayHereWebView
                 paymentUrl={webViewPaymentUrl}
                 paymentParams={webViewPaymentParams}

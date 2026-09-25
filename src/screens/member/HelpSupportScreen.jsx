@@ -131,7 +131,7 @@ const HelpSupportScreen = () => {
                                 <Text style={[styles.faqQuestionText, { color: colors.text }]}>{faq.question}</Text>
                             </View>
                             <Text style={[styles.faqAnswerText, { color: colors.textSecondary }]}>{faq.answer}</Text>
-                            {index < faqItems.length - 1 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+                            {Boolean(index < faqItems.length - 1) && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
                         </View>
                     ))}
                 </Card>

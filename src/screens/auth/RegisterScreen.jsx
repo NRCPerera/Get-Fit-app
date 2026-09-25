@@ -273,14 +273,14 @@ const RegisterScreen = () => {
                 leftIcon="lock-closed-outline"
               />
 
-              {status?.error && (
+              {Boolean(status?.error) && (
                 <View style={[styles.errorContainer, { backgroundColor: colors.error + '15' }]}>
                   <Ionicons name="alert-circle" size={20} color={colors.error} />
                   <Text style={[styles.errorText, { color: colors.error }]}>{status.error}</Text>
                 </View>
               )}
 
-              {status?.success && (
+              {Boolean(status?.success) && (
                 <View style={[styles.successContainer, { backgroundColor: colors.success + '15' }]}>
                   <Ionicons name="checkmark-circle" size={20} color={colors.success} />
                   <Text style={[styles.successText, { color: colors.success }]}>{status.success}</Text>

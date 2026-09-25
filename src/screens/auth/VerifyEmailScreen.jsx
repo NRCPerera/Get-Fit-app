@@ -151,7 +151,7 @@ const VerifyEmailScreen = () => {
               ))}
             </View>
 
-            {error && (
+            {Boolean(error) && (
               <View style={[styles.errorContainer, { backgroundColor: colors.error + '15' }]}>
                 <Ionicons name="alert-circle" size={20} color={colors.error} />
                 <Text style={[styles.errorText, { color: colors.error }]}>

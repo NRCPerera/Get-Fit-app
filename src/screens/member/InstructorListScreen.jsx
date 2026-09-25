@@ -64,7 +64,7 @@ const InstructorCard = ({ item, index, navigation, colors, dynamicTheme, isDark 
                 )}
               </View>
             </LinearGradient>
-            {isAvailable && (
+            {Boolean(isAvailable) && (
               <View style={[styles.statusBadge, { backgroundColor: colors.card, borderColor: colors.card }]}>
                 <MotionView pulse style={[styles.statusDot, { backgroundColor: colors.success }]} />
               </View>
@@ -87,7 +87,7 @@ const InstructorCard = ({ item, index, navigation, colors, dynamicTheme, isDark 
         </View>
 
         {/* Bio */}
-        {item.bio && (
+        {Boolean(item.bio) && (
           <Text style={[styles.bio, { color: colors.textTertiary }]} numberOfLines={2}>{item.bio}</Text>
         )}
 
@@ -96,13 +96,13 @@ const InstructorCard = ({ item, index, navigation, colors, dynamicTheme, isDark 
 
         {/* Bottom chips row */}
         <View style={styles.chipsRow}>
-          {experience && (
+          {Boolean(experience) && (
             <View style={[styles.chip, { backgroundColor: colors.primary + '10' }]}>
               <Ionicons name="time-outline" size={13} color={colors.primary} />
               <Text style={[styles.chipText, { color: colors.primary }]}>{experience}</Text>
             </View>
           )}
-          {monthlyRate && (
+          {Boolean(monthlyRate) && (
             <View style={[styles.chip, { backgroundColor: colors.accent ? colors.accent + '12' : colors.secondary + '12' }]}>
               <Ionicons name="cash-outline" size={13} color={colors.accent || colors.secondary} />
               <Text style={[styles.chipText, { color: colors.accent || colors.secondary }]}>{monthlyRate}</Text>
@@ -239,7 +239,7 @@ const InstructorListScreen = () => {
               onChangeText={setQuery}
               style={[styles.searchInput, { color: colors.text }]}
             />
-            {query.length > 0 && (
+            {Boolean(query.length > 0) && (
               <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
                 <View style={[styles.clearBtnInner, { backgroundColor: colors.textTertiary + '25' }]}>
                   <Ionicons name="close" size={14} color={colors.textSecondary} />
@@ -283,7 +283,7 @@ const InstructorListScreen = () => {
       )}
 
       {/* ── Pagination ── */}
-      {items.length > 0 && (
+      {Boolean(items.length > 0) && (
         <View style={[styles.paginationBar, {
           backgroundColor: isDark ? colors.card + 'F0' : colors.background + 'F8',
           borderTopColor: colors.border + '30',

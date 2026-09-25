@@ -18,12 +18,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
-import * as Notifications from 'expo-notifications';
 
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
 import { getFileUrl } from '../../utils/helpers';
 import BackButton from '../../components/common/BackButton';
+import { addNotificationReceivedListener } from '../../services/pushNotifications';
 import {
   getOrCreateConversation,
   getMessages,
@@ -133,17 +133,26 @@ const ChatScreen = ({ navigation, route }) => {
 
   // Listen for push notifications to trigger instant refresh
   useEffect(() => {
-    const subscription = Notifications.addNotificationReceivedListener(notification => {
-      const data = notification.request.content.data;
+    let subscription;
+    let cancelled = false;
 
-      // If the notification is for this conversation, refresh immediately
-      if (data?.type === 'message' && data?.conversationId === conversationId) {
-        fetchMessages(1, false, true);
-      }
-    });
+    addNotificationReceivedListener(notification => {
+        const data = notification.request.content.data;
+
+        // If the notification is for this conversation, refresh immediately
+        if (data?.type === 'message' && data?.conversationId === conversationId) {
+          fetchMessages(1, false, true);
+        }
+      })
+      .then((nextSubscription) => {
+        if (cancelled) nextSubscription?.remove();
+        else subscription = nextSubscription;
+      })
+      .catch((error) => console.warn('Unable to listen for notifications:', error));
 
     return () => {
-      subscription.remove();
+      cancelled = true;
+      subscription?.remove();
     };
   }, [conversationId]);
 
@@ -275,7 +284,7 @@ const ChatScreen = ({ navigation, route }) => {
 
     return (
       <View>
-        {showDateHeader && (
+        {Boolean(showDateHeader) && (
           <View style={styles.dateHeaderContainer}>
             <View style={[styles.dateHeaderLine, { backgroundColor: colors.border }]} />
             <Text style={[styles.dateHeaderText, { color: colors.textTertiary, backgroundColor: colors.backgroundSecondary }]}>
@@ -291,7 +300,7 @@ const ChatScreen = ({ navigation, route }) => {
             isOwnMessage ? styles.ownMessageContainer : styles.otherMessageContainer,
           ]}
         >
-          {!isOwnMessage && (
+          {Boolean(!isOwnMessage) && (
             <View style={styles.senderAvatar}>
               {item.sender?.profilePicture ? (
                 <Image
@@ -334,7 +343,7 @@ const ChatScreen = ({ navigation, route }) => {
               >
                 {formatMessageTime(item.createdAt)}
               </Text>
-              {isOwnMessage && (
+              {Boolean(isOwnMessage) && (
                 <Ionicons
                   name={item.isRead ? 'checkmark-done' : 'checkmark'}
                   size={14}
@@ -395,7 +404,7 @@ const ChatScreen = ({ navigation, route }) => {
               {recipient.name || 'Unknown User'}
             </Text>
             <View style={styles.headerRoleContainer}>
-              {recipient.role === 'instructor' && (
+              {Boolean(recipient.role === 'instructor') && (
                 <Ionicons
                   name="star"
                   size={12}

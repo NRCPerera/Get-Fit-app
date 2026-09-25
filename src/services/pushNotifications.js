@@ -1,17 +1,47 @@
 import { useState, useEffect, useRef } from 'react';
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { notificationAPI } from '../api/notification.api';
 
+const isExpoGo = Constants.expoGoConfig != null;
+let notificationsModulePromise = null;
+
+const getNotificationsModule = async () => {
+    if (isExpoGo) return null;
+
+    if (!notificationsModulePromise) {
+        notificationsModulePromise = import('expo-notifications');
+    }
+
+    return notificationsModulePromise;
+};
+
 // Configure how notifications are displayed when the app is in the foreground
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-    }),
-});
+getNotificationsModule()
+    .then((Notifications) => {
+        Notifications?.setNotificationHandler({
+            handleNotification: async () => ({
+                shouldShowBanner: true,
+                shouldShowList: true,
+                shouldPlaySound: true,
+                shouldSetBadge: true,
+            }),
+        });
+    })
+    .catch((error) => {
+        console.warn('Unable to configure notification handler:', error);
+    });
+
+export const addNotificationReceivedListener = async (listener) => {
+    const Notifications = await getNotificationsModule();
+    return Notifications?.addNotificationReceivedListener(listener) || null;
+};
+
+export const addNotificationResponseReceivedListener = async (listener) => {
+    const Notifications = await getNotificationsModule();
+    return Notifications?.addNotificationResponseReceivedListener(listener) || null;
+};
 
 /**
  * Hook to manage push notifications
@@ -25,27 +55,36 @@ export const usePushNotifications = (onNotificationReceived, onNotificationRespo
     const responseListener = useRef();
 
     useEffect(() => {
-        // Set up notification listeners
-        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-            setNotification(notification);
-            if (onNotificationReceived) {
-                onNotificationReceived(notification);
-            }
-        });
+        let cancelled = false;
 
-        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-            if (onNotificationResponse) {
-                onNotificationResponse(response);
+        const setUpListeners = async () => {
+            const Notifications = await getNotificationsModule();
+            if (!Notifications || cancelled) return;
+
+            notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+                setNotification(notification);
+                if (onNotificationReceived) {
+                    onNotificationReceived(notification);
+                }
+            });
+
+            responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+                if (onNotificationResponse) {
+                    onNotificationResponse(response);
+                }
+            });
+        };
+
+        setUpListeners().catch((error) => {
+            if (!cancelled) {
+                console.warn('Unable to set up notification listeners:', error);
             }
         });
 
         return () => {
-            if (notificationListener.current) {
-                Notifications.removeNotificationSubscription(notificationListener.current);
-            }
-            if (responseListener.current) {
-                Notifications.removeNotificationSubscription(responseListener.current);
-            }
+            cancelled = true;
+            notificationListener.current?.remove();
+            responseListener.current?.remove();
         };
     }, [onNotificationReceived, onNotificationResponse]);
 
@@ -61,6 +100,12 @@ export const usePushNotifications = (onNotificationReceived, onNotificationRespo
  */
 export const registerForPushNotificationsAsync = async () => {
     let token = null;
+
+    const Notifications = await getNotificationsModule();
+    if (!Notifications) {
+        console.log('Remote push notifications are unavailable in Expo Go');
+        return null;
+    }
 
     // Push notifications only work on physical devices
     if (!Device.isDevice) {

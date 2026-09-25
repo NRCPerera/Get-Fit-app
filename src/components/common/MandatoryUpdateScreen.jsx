@@ -48,7 +48,7 @@ const MandatoryUpdateScreen = ({ versionInfo }) => {
         <Text style={styles.subtitle}>
           {versionInfo?.message || 'A new version is required to continue.'}
         </Text>
-        {__DEV__ && (
+        {Boolean(__DEV__) && (
           <Text style={styles.versionMeta}>
             Installed {versionInfo?.installedVersion || 'unknown'} | Required {versionInfo?.minimumVersion || 'unknown'}
           </Text>

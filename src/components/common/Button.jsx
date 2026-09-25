@@ -105,7 +105,7 @@ export default function Button({
         style,
       ]}
     >
-      {(variant === 'primary' || variant === 'secondary') && (
+      {(Boolean(variant === 'primary' || variant === 'secondary')) && (
         <LinearGradient pointerEvents="none" colors={colors.gradients[variant]}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={[StyleSheet.absoluteFillObject, { borderRadius: StyleSheet.flatten(style)?.borderRadius ?? theme.borderRadius.full }]} />
@@ -114,7 +114,7 @@ export default function Button({
         <ActivityIndicator color={v.color} size="small" />
       ) : (
         <View style={styles.content}>
-          {icon && !iconRight && (
+          {Boolean(icon && !iconRight) && (
             <View style={styles.iconLeft}>
               {typeof icon === 'string' ? (
                 <Ionicons name={icon} size={20} color={v.color} />
@@ -136,7 +136,7 @@ export default function Button({
           >
             {title}
           </Text>
-          {icon && iconRight && (
+          {Boolean(icon && iconRight) && (
             <View style={styles.iconRight}>
               {typeof icon === 'string' ? (
                 <Ionicons name={icon} size={20} color={v.color} />

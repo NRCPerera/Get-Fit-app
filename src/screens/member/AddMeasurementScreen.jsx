@@ -22,7 +22,7 @@ const MeasurementInput = ({ label, value, onChange, unit, icon, required = false
     <View style={styles.inputLabelRow}>
       <Ionicons name={icon} size={18} color={colors.primary} />
       <Text style={[styles.label, { color: colors.text }]}>
-        {label} {required && <Text style={[styles.required, { color: colors.error }]}>*</Text>}
+        {label} {Boolean(required) && <Text style={[styles.required, { color: colors.error }]}>*</Text>}
       </Text>
     </View>
     <View style={[styles.inputContainer, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
@@ -34,7 +34,7 @@ const MeasurementInput = ({ label, value, onChange, unit, icon, required = false
         keyboardType="decimal-pad"
         placeholderTextColor={colors.textSecondary}
       />
-      {unit && <Text style={[styles.unit, { color: colors.textSecondary }]}>{unit}</Text>}
+      {Boolean(unit) && <Text style={[styles.unit, { color: colors.textSecondary }]}>{unit}</Text>}
     </View>
   </View>
 );

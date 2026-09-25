@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -63,7 +64,7 @@ const CustomWorkoutDetailScreen = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['left', 'right', 'bottom']}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
@@ -86,7 +87,7 @@ const CustomWorkoutDetailScreen = () => {
                   {workout.difficulty?.charAt(0).toUpperCase() + workout.difficulty?.slice(1)}
                 </Text>
               </View>
-              {workout.scheduleType && workout.scheduleType !== '1-day' && (
+              {Boolean(workout.scheduleType && workout.scheduleType !== '1-day') && (
                 <View style={[styles.typeBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
                   <Text style={styles.typeText}>
                     {workout.scheduleType === '2-day' ? '2 Day Split' : '3 Day Split'}
@@ -106,7 +107,7 @@ const CustomWorkoutDetailScreen = () => {
         </View>
 
         {/* Goals Section */}
-        {workout.goals && workout.goals.length > 0 && (
+        {Boolean(workout.goals && workout.goals.length > 0) && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Goals</Text>
             <View style={styles.goalsContainer}>
@@ -124,7 +125,7 @@ const CustomWorkoutDetailScreen = () => {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Exercises ({workout.exercises?.length || 0})
-            {workout.scheduleType && workout.scheduleType !== '1-day' && (
+            {Boolean(workout.scheduleType && workout.scheduleType !== '1-day') && (
               <Text style={[styles.scheduleTypeLabel, { color: colors.textSecondary }]}>
                 {' '}· {workout.scheduleType === '2-day' ? '2 Days' : '3 Days'}
               </Text>
@@ -155,7 +156,7 @@ const CustomWorkoutDetailScreen = () => {
                         </Text>
                       </View>
                       <View style={styles.exerciseDetails}>
-                        {exercise.setReps && exercise.setReps.length > 0 && (
+                        {Boolean(exercise.setReps && exercise.setReps.length > 0) && (
                           <View style={styles.setRepsContainer}>
                             {exercise.setReps.map((setRep, srIndex) => (
                               <View key={srIndex} style={[styles.setRepItem, { backgroundColor: colors.primary + '10' }]}>
@@ -166,7 +167,7 @@ const CustomWorkoutDetailScreen = () => {
                             ))}
                           </View>
                         )}
-                        {exercise.restTime && (
+                        {Boolean(exercise.restTime) && (
                           <View style={styles.exerciseDetailItem}>
                             <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
                             <Text style={[styles.exerciseDetailText, { color: colors.textSecondary }]}>
@@ -175,7 +176,7 @@ const CustomWorkoutDetailScreen = () => {
                           </View>
                         )}
                       </View>
-                      {exercise.notes && (
+                      {Boolean(exercise.notes) && (
                         <Text style={[styles.exerciseNotes, { color: colors.textTertiary }]}>{exercise.notes}</Text>
                       )}
                     </View>
@@ -196,7 +197,7 @@ const CustomWorkoutDetailScreen = () => {
                   </Text>
                 </View>
                 <View style={styles.exerciseDetails}>
-                  {exercise.setReps && exercise.setReps.length > 0 && (
+                  {Boolean(exercise.setReps && exercise.setReps.length > 0) && (
                     <View style={styles.setRepsContainer}>
                       {exercise.setReps.map((setRep, srIndex) => (
                         <View key={srIndex} style={[styles.setRepItem, { backgroundColor: colors.primary + '10' }]}>
@@ -207,7 +208,7 @@ const CustomWorkoutDetailScreen = () => {
                       ))}
                     </View>
                   )}
-                  {exercise.restTime && (
+                  {Boolean(exercise.restTime) && (
                     <View style={styles.exerciseDetailItem}>
                       <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
                       <Text style={[styles.exerciseDetailText, { color: colors.textSecondary }]}>
@@ -216,7 +217,7 @@ const CustomWorkoutDetailScreen = () => {
                     </View>
                   )}
                 </View>
-                {exercise.notes && (
+                {Boolean(exercise.notes) && (
                   <Text style={[styles.exerciseNotes, { color: colors.textTertiary }]}>{exercise.notes}</Text>
                 )}
               </View>

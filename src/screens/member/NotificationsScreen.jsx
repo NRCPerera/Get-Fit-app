@@ -141,7 +141,7 @@ const NotificationsScreen = () => {
             {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
           </Text>
         </View>
-        {unreadCount > 0 && (
+        {Boolean(unreadCount > 0) && (
           <TouchableOpacity
             style={[styles.markAllButton, { backgroundColor: colors.primary + '15' }]}
             onPress={handleMarkAllAsRead}
@@ -193,7 +193,7 @@ const NotificationsScreen = () => {
                 <View style={styles.notificationContent}>
                   <View style={styles.notificationTitleRow}>
                     <Text style={styles.notificationTitle}>{notification.title}</Text>
-                    {!notification.isRead && (
+                    {Boolean(!notification.isRead) && (
                       <View style={styles.unreadDot} />
                     )}
                   </View>
@@ -202,7 +202,7 @@ const NotificationsScreen = () => {
                     <Text style={styles.notificationDate}>
                       {formatDate(notification.sentAt, 'MMM dd, yyyy • hh:mm a')}
                     </Text>
-                    {notification.link && (
+                    {Boolean(notification.link) && (
                       <View style={styles.linkContainer}>
                         <Ionicons name="link" size={14} color={colors.primary} />
                         <Text style={[styles.linkText, { color: colors.primary }]}>

@@ -268,7 +268,7 @@ const ForgotPasswordScreen = () => {
           <Text style={headerStyles.title}>{getStepTitle()}</Text>
           <Text style={headerStyles.subtitle}>{getStepSubtitle()}</Text>
 
-          {currentStep === 1 && (
+          {Boolean(currentStep === 1) && (
             <Card variant="elevated" style={styles.formCard}>
               <Input
                 label="Email Address"
@@ -293,7 +293,7 @@ const ForgotPasswordScreen = () => {
             </Card>
           )}
 
-          {currentStep === 2 && (
+          {Boolean(currentStep === 2) && (
             <Card variant="elevated" style={styles.formCard}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Enter OTP Code</Text>
               <View style={styles.otpContainer}>
@@ -354,7 +354,7 @@ const ForgotPasswordScreen = () => {
             </Card>
           )}
 
-          {currentStep === 3 && (
+          {Boolean(currentStep === 3) && (
             <Card variant="elevated" style={styles.formCard}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>New Password</Text>
               <Input

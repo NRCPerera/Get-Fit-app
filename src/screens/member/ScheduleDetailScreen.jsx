@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -122,7 +123,7 @@ const ScheduleDetailScreen = () => {
                 <Text style={[styles.infoValue, { color: colors.text }]}>{item.name || 'Untitled Schedule'}</Text>
               </View>
             </View>
-            {item.description && (
+            {Boolean(item.description) && (
               <View style={styles.infoRow}>
                 <Ionicons name="document-text-outline" size={20} color={colors.textSecondary} />
                 <View style={styles.infoContent}>
@@ -131,7 +132,7 @@ const ScheduleDetailScreen = () => {
                 </View>
               </View>
             )}
-            {item.difficulty && (
+            {Boolean(item.difficulty) && (
               <View style={styles.infoRow}>
                 <Ionicons name="trending-up-outline" size={20} color={colors.warning} />
                 <View style={styles.infoContent}>
@@ -146,7 +147,7 @@ const ScheduleDetailScreen = () => {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Date Range</Text>
           <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
-            {item.startDate && (
+            {Boolean(item.startDate) && (
               <View style={styles.infoRow}>
                 <Ionicons name="calendar-outline" size={20} color={colors.primary} />
                 <View style={styles.infoContent}>
@@ -155,7 +156,7 @@ const ScheduleDetailScreen = () => {
                 </View>
               </View>
             )}
-            {item.endDate && (
+            {Boolean(item.endDate) && (
               <View style={styles.infoRow}>
                 <Ionicons name="calendar-outline" size={20} color={colors.secondary} />
                 <View style={styles.infoContent}>
@@ -164,17 +165,17 @@ const ScheduleDetailScreen = () => {
                 </View>
               </View>
             )}
-            {!item.startDate && !item.endDate && (
+            {Boolean(!item.startDate && !item.endDate) && (
               <Text style={[styles.noDateText, { color: colors.textSecondary }]}>No date range specified</Text>
             )}
           </View>
         </View>
 
-        {item.exercises && item.exercises.length > 0 && (
+        {Boolean(item.exercises && item.exercises.length > 0) && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Exercises ({item.exercises.length})
-              {item.scheduleType && item.scheduleType !== '1-day' && (
+              {Boolean(item.scheduleType && item.scheduleType !== '1-day') && (
                 <Text style={[styles.scheduleTypeLabel, { color: colors.textSecondary }]}> · {item.scheduleType === '2-day' ? '2 Days' : '3 Days'}</Text>
               )}
             </Text>
@@ -196,7 +197,7 @@ const ScheduleDetailScreen = () => {
                             </Text>
                           </View>
                           <View style={styles.exerciseDetails}>
-                            {exercise.setReps && exercise.setReps.length > 0 && (
+                            {Boolean(exercise.setReps && exercise.setReps.length > 0) && (
                               <View style={styles.setRepsContainer}>
                                 {exercise.setReps.map((setRep, srIndex) => (
                                   <View key={srIndex} style={[styles.setRepItem, { backgroundColor: colors.primary + '20' }]}>
@@ -207,20 +208,20 @@ const ScheduleDetailScreen = () => {
                                 ))}
                               </View>
                             )}
-                            {exercise.duration && (
+                            {Boolean(exercise.duration) && (
                               <View style={styles.exerciseDetailItem}>
                                 <Text style={[styles.exerciseDetailLabel, { color: colors.textSecondary }]}>Duration:</Text>
                                 <Text style={[styles.exerciseDetailValue, { color: colors.text }]}>{exercise.duration} min</Text>
                               </View>
                             )}
-                            {exercise.restTime && (
+                            {Boolean(exercise.restTime) && (
                               <View style={styles.exerciseDetailItem}>
                                 <Text style={[styles.exerciseDetailLabel, { color: colors.textSecondary }]}>Rest:</Text>
                                 <Text style={[styles.exerciseDetailValue, { color: colors.text }]}>{exercise.restTime} sec</Text>
                               </View>
                             )}
                           </View>
-                          {exercise.notes && (
+                          {Boolean(exercise.notes) && (
                             <Text style={[styles.exerciseNotes, { color: colors.textSecondary }]}>{exercise.notes}</Text>
                           )}
                         </View>
@@ -241,7 +242,7 @@ const ScheduleDetailScreen = () => {
                       </Text>
                     </View>
                     <View style={styles.exerciseDetails}>
-                      {exercise.setReps && exercise.setReps.length > 0 && (
+                      {Boolean(exercise.setReps && exercise.setReps.length > 0) && (
                         <View style={styles.setRepsContainer}>
                           {exercise.setReps.map((setRep, srIndex) => (
                             <View key={srIndex} style={[styles.setRepItem, { backgroundColor: colors.primary + '20' }]}>
@@ -252,20 +253,20 @@ const ScheduleDetailScreen = () => {
                           ))}
                         </View>
                       )}
-                      {exercise.duration && (
+                      {Boolean(exercise.duration) && (
                         <View style={styles.exerciseDetailItem}>
                           <Text style={[styles.exerciseDetailLabel, { color: colors.textSecondary }]}>Duration:</Text>
                           <Text style={[styles.exerciseDetailValue, { color: colors.text }]}>{exercise.duration} min</Text>
                         </View>
                       )}
-                      {exercise.restTime && (
+                      {Boolean(exercise.restTime) && (
                         <View style={styles.exerciseDetailItem}>
                           <Text style={[styles.exerciseDetailLabel, { color: colors.textSecondary }]}>Rest:</Text>
                           <Text style={[styles.exerciseDetailValue, { color: colors.text }]}>{exercise.restTime} sec</Text>
                         </View>
                       )}
                     </View>
-                    {exercise.notes && (
+                    {Boolean(exercise.notes) && (
                       <Text style={[styles.exerciseNotes, { color: colors.textSecondary }]}>{exercise.notes}</Text>
                     )}
                   </View>
@@ -275,7 +276,7 @@ const ScheduleDetailScreen = () => {
           </View>
         )}
 
-        {item.goals && item.goals.length > 0 && (
+        {Boolean(item.goals && item.goals.length > 0) && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Goals</Text>
             <View style={styles.goalsContainer}>
@@ -289,7 +290,7 @@ const ScheduleDetailScreen = () => {
           </View>
         )}
 
-        {item.notes && (
+        {Boolean(item.notes) && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Notes</Text>
             <View style={[styles.notesCard, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
@@ -412,4 +413,3 @@ const styles = StyleSheet.create({
 });
 
 export default ScheduleDetailScreen;
-

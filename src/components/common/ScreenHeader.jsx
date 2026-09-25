@@ -62,7 +62,7 @@ export default function ScreenHeader({
             <View style={styles.content}>
                 {/* Left side - Back button */}
                 <View style={styles.leftContainer}>
-                    {showBackButton && (
+                    {Boolean(showBackButton) && (
                         <TouchableOpacity
                             style={styles.backButton}
                             accessibilityRole="button"
@@ -80,12 +80,12 @@ export default function ScreenHeader({
 
                 {/* Center - Title */}
                 <View style={styles.centerContainer}>
-                    {title && (
+                    {Boolean(title) && (
                         <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
                             {title}
                         </Text>
                     )}
-                    {subtitle && (
+                    {Boolean(subtitle) && (
                         <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
                             {subtitle}
                         </Text>
@@ -95,7 +95,7 @@ export default function ScreenHeader({
                 {/* Right side - Optional action */}
                 <View style={styles.rightContainer}>
                     {rightComponent}
-                    {!rightComponent && rightIcon && onRightPress && (
+                    {Boolean(!rightComponent && rightIcon && onRightPress) && (
                         <TouchableOpacity
                             style={styles.rightButton}
                             onPress={onRightPress}

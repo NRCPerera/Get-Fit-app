@@ -40,21 +40,21 @@ export default function GradientCard({
             style={[styles.gradient, style]}
         >
             <View style={styles.content}>
-                {icon && (
+                {Boolean(icon) && (
                     <View style={styles.iconContainer}>
                         <Ionicons name={icon} size={28} color="rgba(255,255,255,0.9)" />
                     </View>
                 )}
 
                 <View style={styles.textContainer}>
-                    {title && <Text style={styles.title}>{title}</Text>}
-                    {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+                    {Boolean(title) && <Text style={styles.title}>{title}</Text>}
+                    {Boolean(subtitle) && <Text style={styles.subtitle}>{subtitle}</Text>}
                 </View>
 
-                {(value !== undefined || valueLabel) && (
+                {(Boolean(value !== undefined || valueLabel)) && (
                     <View style={styles.valueContainer}>
-                        {value !== undefined && <Text style={styles.value}>{value}</Text>}
-                        {valueLabel && <Text style={styles.valueLabel}>{valueLabel}</Text>}
+                        {Boolean(value !== undefined) && <Text style={styles.value}>{value}</Text>}
+                        {Boolean(valueLabel) && <Text style={styles.valueLabel}>{valueLabel}</Text>}
                     </View>
                 )}
 

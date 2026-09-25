@@ -335,7 +335,7 @@ const CreateScheduleScreen = () => {
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>
-              {(item.setReps || []).length > 1 && (
+              {Boolean((item.setReps || []).length > 1) && (
                 <TouchableOpacity
                   onPress={() => removeSetRep(index, srIndex)}
                   style={styles.removeSetRepButton}
@@ -497,7 +497,7 @@ const CreateScheduleScreen = () => {
               <Text style={[styles.dateButtonText, !startDate && styles.dateButtonPlaceholder, { color: startDate ? colors.text : colors.textSecondary }]}>
                 {startDate || 'Select start date'}
               </Text>
-              {startDate && (
+              {Boolean(startDate) && (
                 <TouchableOpacity
                   onPress={(e) => {
                     e.stopPropagation();
@@ -520,7 +520,7 @@ const CreateScheduleScreen = () => {
               <Text style={[styles.dateButtonText, !endDate && styles.dateButtonPlaceholder, { color: endDate ? colors.text : colors.textSecondary }]}>
                 {endDate || 'Select end date'}
               </Text>
-              {endDate && (
+              {Boolean(endDate) && (
                 <TouchableOpacity
                   onPress={(e) => {
                     e.stopPropagation();
@@ -546,7 +546,7 @@ const CreateScheduleScreen = () => {
               <Text style={[styles.addButtonText, { color: colors.white }]}>Add Exercise</Text>
             </TouchableOpacity>
           </View>
-          {scheduleType !== '1-day' && (
+          {Boolean(scheduleType !== '1-day') && (
             <View style={styles.dayTabs}>
               {Array.from({ length: scheduleType === '2-day' ? 2 : 3 }, (_, i) => i + 1).map(day => (
                 <TouchableOpacity
@@ -634,7 +634,7 @@ const CreateScheduleScreen = () => {
                   autoCorrect={false}
                   placeholderTextColor={colors.textSecondary}
                 />
-                {searchQuery.length > 0 && (
+                {Boolean(searchQuery.length > 0) && (
                   <TouchableOpacity onPress={() => setSearchQuery('')}>
                     <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
                   </TouchableOpacity>

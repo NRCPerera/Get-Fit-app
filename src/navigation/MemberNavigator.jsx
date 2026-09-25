@@ -211,6 +211,11 @@ const ProfileStack = () => (
       options={{ title: 'Create Nutrition Plan' }}
     />
     <Stack.Screen
+      name="EditNutritionPlan"
+      component={CreateNutritionPlanScreen}
+      options={{ title: 'Edit Nutrition Plan' }}
+    />
+    <Stack.Screen
       name="ProgressTracking"
       component={ProgressTrackingScreen}
       options={{ headerShown: false }}

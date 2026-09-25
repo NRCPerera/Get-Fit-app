@@ -349,7 +349,7 @@ const SubscriptionPaymentScreen = () => {
           </View>
           <View style={styles.previewInfo}>
             <Text style={styles.previewName}>{instructorName || 'Instructor'}</Text>
-            {instructorSpecialty && (
+            {Boolean(instructorSpecialty) && (
               <Text style={styles.previewSpecialty}>{instructorSpecialty}</Text>
             )}
           </View>
@@ -373,7 +373,7 @@ const SubscriptionPaymentScreen = () => {
             </View>
             <View style={styles.instructorInfo}>
               <Text style={[styles.instructorName, { color: colors.text }]}>{instructorName || 'Instructor'}</Text>
-              {instructorSpecialty && (
+              {Boolean(instructorSpecialty) && (
                 <Text style={[styles.instructorSpecialty, { color: colors.textSecondary }]}>{instructorSpecialty}</Text>
               )}
             </View>
@@ -384,7 +384,7 @@ const SubscriptionPaymentScreen = () => {
           </View>
         </Card>
 
-        {!processing && !paymentCompleted && (
+        {Boolean(!processing && !paymentCompleted) && (
           <Card variant="elevated" style={styles.paymentForm}>
             <View style={[styles.infoBox, { backgroundColor: colors.primary + '10' }]}>
               <Ionicons name="information-circle" size={24} color={colors.primary} />
@@ -414,7 +414,7 @@ const SubscriptionPaymentScreen = () => {
         )}
 
         {/* Processing State */}
-        {processing && !paymentCompleted && (
+        {Boolean(processing && !paymentCompleted) && (
           <Card variant="elevated" style={styles.stateCard}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={[styles.stateTitle, { color: colors.text }]}>Processing payment...</Text>
@@ -425,7 +425,7 @@ const SubscriptionPaymentScreen = () => {
         )}
 
         {/* Success State */}
-        {paymentCompleted && (
+        {Boolean(paymentCompleted) && (
           <Card variant="elevated" style={styles.stateCard}>
             <View style={styles.successIcon}>
               <Ionicons name="checkmark-circle" size={64} color={colors.success} />
@@ -474,7 +474,7 @@ const SubscriptionPaymentScreen = () => {
               <Text style={[styles.webViewTitle, { color: colors.text }]}>PayHere Payment</Text>
               <View style={styles.webViewCloseButton} />
             </View>
-            {webViewPaymentUrl && webViewPaymentParams && (
+            {Boolean(webViewPaymentUrl && webViewPaymentParams) && (
               <PayHereWebView
                 paymentUrl={webViewPaymentUrl}
                 paymentParams={webViewPaymentParams}

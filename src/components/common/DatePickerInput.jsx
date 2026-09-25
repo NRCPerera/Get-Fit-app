@@ -82,10 +82,10 @@ export default function DatePickerInput({
 
     return (
         <View style={[styles.container, style]}>
-            {label && (
+            {Boolean(label) && (
                 <Text style={styles.label}>
                     {label}
-                    {required && <Text style={styles.required}> *</Text>}
+                    {Boolean(required) && <Text style={styles.required}> *</Text>}
                 </Text>
             )}
 
@@ -135,11 +135,11 @@ export default function DatePickerInput({
                 )}
             </TouchableOpacity>
 
-            {error && (
+            {Boolean(error) && (
                 <Text style={styles.error}>{error}</Text>
             )}
 
-            {helperText && !error && (
+            {Boolean(helperText && !error) && (
                 <Text style={styles.helperText}>{helperText}</Text>
             )}
 

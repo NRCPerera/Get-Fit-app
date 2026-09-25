@@ -178,7 +178,7 @@ const InstructorProfileScreen = () => {
           <View style={styles.profileInfo}>
             <Text style={[styles.profileName, { color: colors.text }]}>{name}</Text>
             <Text style={[styles.profileSpecialization, { color: colors.textSecondary }]}>{specialty}</Text>
-            {experience > 0 && (
+            {Boolean(experience > 0) && (
               <View style={[styles.experienceBadge, { backgroundColor: colors.secondary + '20' }]}>
                 <Ionicons name="trophy-outline" size={14} color={colors.secondary} />
                 <Text style={[styles.experienceText, { color: colors.secondary }]}>{experience} {experience === 1 ? 'year' : 'years'} experience</Text>
@@ -188,7 +188,7 @@ const InstructorProfileScreen = () => {
         </View>
       </View>
 
-      {profileData.bio && (
+      {Boolean(profileData.bio) && (
         <View style={[styles.bioSection, { backgroundColor: colors.card }]}>
           <Text style={[styles.bioText, { color: colors.textSecondary }]}>{profileData.bio}</Text>
         </View>
@@ -207,25 +207,25 @@ const InstructorProfileScreen = () => {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Information</Text>
         <View style={[styles.infoCard, { backgroundColor: colors.card }]}>
-          {email && (
+          {Boolean(email) && (
             <View style={styles.infoRow}>
               <Ionicons name="mail-outline" size={20} color={colors.textSecondary} />
               <Text style={[styles.infoText, { color: colors.text }]}>{email}</Text>
             </View>
           )}
-          {phone && (
+          {Boolean(phone) && (
             <View style={styles.infoRow}>
               <Ionicons name="call-outline" size={20} color={colors.textSecondary} />
               <Text style={[styles.infoText, { color: colors.text }]}>{phone}</Text>
             </View>
           )}
-          {!email && !phone && (
+          {Boolean(!email && !phone) && (
             <Text style={[styles.noInfoText, { color: colors.textSecondary }]}>No contact information available</Text>
           )}
         </View>
       </View>
 
-      {specializations.length > 0 && (
+      {Boolean(specializations.length > 0) && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Specializations</Text>
           <View style={styles.certificationsContainer}>
@@ -239,7 +239,7 @@ const InstructorProfileScreen = () => {
         </View>
       )}
 
-      {certifications.length > 0 && (
+      {Boolean(certifications.length > 0) && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Certifications</Text>
           <View style={styles.certificationsContainer}>

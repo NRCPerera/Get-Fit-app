@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, StatusBar, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../styles/theme';
@@ -34,7 +34,9 @@ const NutritionScreen = () => {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => {
+    load();
+  }, [load]));
 
   const onRefresh = useCallback(() => { setRefreshing(true); load(); }, [load]);
 
@@ -66,7 +68,7 @@ const NutritionScreen = () => {
                 <Text style={[styles.statText, { color: colors.textSecondary }]}>{item.totalCalories} kcal</Text>
               </View>
             ) : null}
-            {getMealCount(item) > 0 && (
+            {Boolean(getMealCount(item) > 0) && (
               <View style={[styles.statBadge, { backgroundColor: colors.backgroundSecondary }]}>
                 <Ionicons name="restaurant" size={14} color={colors.secondary} />
                 <Text style={[styles.statText, { color: colors.textSecondary }]}>{getMealCount(item)} meals</Text>
@@ -78,7 +80,7 @@ const NutritionScreen = () => {
           <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
         </View>
       </View>
-      {item.description && (
+      {Boolean(item.description) && (
         <Text style={[styles.cardDescription, { color: colors.textSecondary, borderTopColor: colors.border }]} numberOfLines={2}>{item.description}</Text>
       )}
     </TouchableOpacity>

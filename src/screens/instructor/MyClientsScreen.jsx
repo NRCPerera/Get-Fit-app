@@ -228,7 +228,7 @@ const MyClientsScreen = () => {
         </View>
 
         {/* Accepting Members Toggle (only on allocated tab) */}
-        {activeTab === 'allocated' && (
+        {Boolean(activeTab === 'allocated') && (
           <View style={[styles.acceptingToggleContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.acceptingToggleInfo}>
               <Ionicons
@@ -304,7 +304,7 @@ const MyClientsScreen = () => {
                           Allocated {formatDate(member.allocatedAt)}
                         </Text>
                       </View>
-                      {member.phone && (
+                      {Boolean(member.phone) && (
                         <View style={styles.detailItem}>
                           <Ionicons name="call-outline" size={16} color={colors.textSecondary} />
                           <Text style={[styles.detailText, { color: colors.textSecondary }]}>{member.phone}</Text>
@@ -391,7 +391,7 @@ const MyClientsScreen = () => {
                           Subscribed {formatDate(client.startDate || client.subscribedAt)}
                         </Text>
                       </View>
-                      {(client.endDate || client.expiresAt) && (
+                      {(Boolean(client.endDate || client.expiresAt)) && (
                         <View style={styles.detailItem}>
                           <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
                           <Text style={[styles.detailText, { color: colors.textSecondary }]}>
@@ -400,7 +400,7 @@ const MyClientsScreen = () => {
                         </View>
                       )}
                     </View>
-                    {client.phone && (
+                    {Boolean(client.phone) && (
                       <View style={styles.detailRow}>
                         <View style={styles.detailItem}>
                           <Ionicons name="call-outline" size={16} color={colors.textSecondary} />

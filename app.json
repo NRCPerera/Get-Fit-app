@@ -4,14 +4,9 @@
     "slug": "gym-management-app",
     "version": "1.2.8",
     "orientation": "default",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-square.png",
     "userInterfaceStyle": "light",
     "scheme": "getfit",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ridma2001.getfit",
@@ -26,7 +21,7 @@
       "package": "com.getfit.app",
       "versionCode": 1,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon-square.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
@@ -56,13 +51,12 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/adaptive-icon.png",
+          "icon": "./assets/adaptive-icon-square.png",
           "color": "#6366f1",
           "sounds": []
         }
       ],
       "expo-secure-store",
-      "react-native-edge-to-edge",
       [
         "expo-build-properties",
         {
@@ -71,7 +65,17 @@
             "enableShrinkResourcesInReleaseBuilds": true
           }
         }
-      ]
+      ],
+      "expo-status-bar",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon-square.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {
@@ -81,8 +85,3 @@
     "owner": "ridma2001"
   }
 }
-
-
-
-
-

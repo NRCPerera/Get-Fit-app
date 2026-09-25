@@ -1,5 +1,6 @@
 import { Linking, Platform } from 'react-native';
 import * as Application from 'expo-application';
+import Constants from 'expo-constants';
 
 const REQUEST_TIMEOUT_MS = 8000;
 const SUPPORTED_PLATFORMS = new Set(['ios', 'android']);
@@ -82,6 +83,11 @@ export const checkAppVersion = async () => {
     return fallback;
   }
 
+  // Expo Go reports its own native app version, not this project's version.
+  if (Constants.expoGoConfig != null) {
+    return fallback;
+  }
+
   const apiBaseUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
   if (!apiBaseUrl) {
     warnVersionCheck('EXPO_PUBLIC_API_URL is not set. Skipping app version check.');
@@ -95,9 +101,12 @@ export const checkAppVersion = async () => {
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const apiOrigin = apiBaseUrl
+    .replace(/\/+$/, '')
+    .replace(/\/+api\/v1$/i, '');
 
   try {
-    const response = await fetch(`${apiBaseUrl.replace(/\/$/, '')}/api/app-version`, {
+    const response = await fetch(`${apiOrigin}/api/app-version`, {
       method: 'GET',
       headers: {
         Accept: 'application/json',

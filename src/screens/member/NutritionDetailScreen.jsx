@@ -1,17 +1,22 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import React, { useCallback, useState } from 'react';
+import { Alert, View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 import { theme } from '../../styles/theme';
 import { useTheme } from '../../context/ThemeContext';
 import { nutritionAPI } from '../../api/nutrition.api';
+import Button from '../../components/common/Button';
 
 const NutritionDetailScreen = () => {
   const route = useRoute();
+  const navigation = useNavigation();
   const { id } = route.params || {};
   const { theme: dynamicTheme, isDark } = useTheme();
   const colors = dynamicTheme.colors;
+  const user = useSelector((state) => state.auth.user);
   const [plan, setPlan] = useState(null);
   const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -24,7 +29,42 @@ const NutritionDetailScreen = () => {
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => {
+    load();
+  }, [load]));
+
+  const creatorId = plan?.createdBy?._id || plan?.createdBy;
+  const userId = user?._id || user?.id;
+  const canManage = Boolean(
+    plan && userId && (user?.role === 'admin' || String(creatorId) === String(userId))
+  );
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete nutrition plan?',
+      'This plan will be removed from your nutrition plans.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeleting(true);
+              await nutritionAPI.deletePlan(plan._id);
+              Alert.alert('Plan deleted', 'The nutrition plan was deleted successfully.', [
+                { text: 'OK', onPress: () => navigation.goBack() },
+              ]);
+            } catch (deleteError) {
+              Alert.alert('Error', deleteError?.response?.data?.message || 'Failed to delete nutrition plan');
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   if (!plan && !error) {
     return (
@@ -37,27 +77,48 @@ const NutritionDetailScreen = () => {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       {error ? <Text style={[styles.error, { color: colors.error }]}>{error}</Text> : null}
-      {plan && (
+      {Boolean(plan) && (
         <View style={[styles.card, { backgroundColor: colors.card }]}>
           <Text style={[styles.title, { color: colors.textPrimary }]}>{plan.title || 'Nutrition Plan'}</Text>
           {plan.description ? <Text style={[styles.desc, { color: colors.textSecondary }]}>{plan.description}</Text> : null}
+
+          {canManage ? (
+            <View style={styles.actions}>
+              <Button
+                title="Edit"
+                icon="create-outline"
+                variant="outline"
+                onPress={() => navigation.navigate('EditNutritionPlan', { planId: plan._id })}
+                disabled={deleting}
+                style={styles.actionButton}
+              />
+              <Button
+                title="Delete"
+                icon="trash-outline"
+                variant="danger"
+                onPress={handleDelete}
+                loading={deleting}
+                style={styles.actionButton}
+              />
+            </View>
+          ) : null}
           
           <View style={[styles.metaContainer, { borderTopColor: colors.border }]}>
-            {plan.dailyCalories && (
+            {Boolean(plan.dailyCalories) && (
               <Text style={[styles.meta, { color: colors.textSecondary }]}>Daily Calories: {plan.dailyCalories} kcal</Text>
             )}
-            {plan.dailyProtein && (
+            {Boolean(plan.dailyProtein) && (
               <Text style={[styles.meta, { color: colors.textSecondary }]}>Daily Protein: {plan.dailyProtein}g</Text>
             )}
-            {plan.dailyCarbs && (
+            {Boolean(plan.dailyCarbs) && (
               <Text style={[styles.meta, { color: colors.textSecondary }]}>Daily Carbs: {plan.dailyCarbs}g</Text>
             )}
-            {plan.dailyFats && (
+            {Boolean(plan.dailyFats) && (
               <Text style={[styles.meta, { color: colors.textSecondary }]}>Daily Fats: {plan.dailyFats}g</Text>
             )}
           </View>
 
-          {plan.dietaryRestrictions && plan.dietaryRestrictions.length > 0 && (
+          {Boolean(plan.dietaryRestrictions && plan.dietaryRestrictions.length > 0) && (
             <View style={styles.restrictionsContainer}>
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Dietary Restrictions</Text>
               <View style={styles.chipContainer}>
@@ -79,11 +140,11 @@ const NutritionDetailScreen = () => {
                     <Text style={[styles.mealType, { color: colors.primary }]}>
                       {meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)}
                     </Text>
-                    {meal.time && (
+                    {Boolean(meal.time) && (
                       <Text style={[styles.mealTime, { color: colors.textSecondary }]}>{meal.time}</Text>
                     )}
                   </View>
-                  {meal.name && (
+                  {Boolean(meal.name) && (
                     <Text style={[styles.mealName, { color: colors.text }]}>{meal.name}</Text>
                   )}
                   
@@ -93,17 +154,17 @@ const NutritionDetailScreen = () => {
                         <View key={`food-${foodIdx}`} style={styles.foodItem}>
                           <Text style={[styles.foodName, { color: colors.text }]}>• {food.name}</Text>
                           <View style={styles.foodDetails}>
-                            {food.quantity > 0 && (
+                            {Boolean(food.quantity > 0) && (
                               <Text style={[styles.foodDetail, { color: colors.textSecondary }]}>
                                 {food.quantity} {food.unit || 'serving'}
                               </Text>
                             )}
-                            {food.calories > 0 && (
+                            {Boolean(food.calories > 0) && (
                               <Text style={[styles.foodDetail, { color: colors.textSecondary }]}>
                                 {food.calories} kcal
                               </Text>
                             )}
-                            {(food.protein > 0 || food.carbs > 0 || food.fats > 0) && (
+                            {(Boolean(food.protein > 0 || food.carbs > 0 || food.fats > 0)) && (
                               <Text style={[styles.foodDetail, { color: colors.textSecondary }]}>
                                 P: {food.protein}g C: {food.carbs}g F: {food.fats}g
                               </Text>
@@ -114,7 +175,7 @@ const NutritionDetailScreen = () => {
                     </View>
                   ) : null}
                   
-                  {meal.instructions && (
+                  {Boolean(meal.instructions) && (
                     <Text style={[styles.mealInstructions, { color: colors.textSecondary }]}>{meal.instructions}</Text>
                   )}
                 </View>
@@ -122,21 +183,21 @@ const NutritionDetailScreen = () => {
             </View>
           ) : null}
 
-          {plan.notes && (
+          {Boolean(plan.notes) && (
             <View style={[styles.notesContainer, { borderTopColor: colors.border }]}>
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Notes</Text>
               <Text style={[styles.notesText, { color: colors.textSecondary }]}>{plan.notes}</Text>
             </View>
           )}
 
-          {(plan.startDate || plan.endDate) && (
+          {(Boolean(plan.startDate || plan.endDate)) && (
             <View style={[styles.datesContainer, { borderTopColor: colors.border }]}>
-              {plan.startDate && (
+              {Boolean(plan.startDate) && (
                 <Text style={[styles.dateText, { color: colors.textSecondary }]}>
                   Start: {new Date(plan.startDate).toLocaleDateString()}
                 </Text>
               )}
-              {plan.endDate && (
+              {Boolean(plan.endDate) && (
                 <Text style={[styles.dateText, { color: colors.textSecondary }]}>
                   End: {new Date(plan.endDate).toLocaleDateString()}
                 </Text>
@@ -170,6 +231,15 @@ const styles = StyleSheet.create({
   desc: { 
     marginTop: theme.spacing.xs,
     marginBottom: theme.spacing.sm,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+  },
+  actionButton: {
+    flex: 1,
   },
   metaContainer: {
     marginTop: theme.spacing.sm,
@@ -277,6 +347,5 @@ const styles = StyleSheet.create({
 });
 
 export default NutritionDetailScreen;
-
 
 

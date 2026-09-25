@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, SafeAreaView, StatusBar, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, StatusBar, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -13,7 +14,7 @@ import BackButton from '../../components/common/BackButton';
 
 // Exercise Video Component
 const ExerciseVideo = ({ url }) => {
-    const source = { uri: getFileUrl(url) || url };
+    const source = { uri: getFileUrl(url) };
     const player = useVideoPlayer(source, player => {
         player.loop = true;
         player.muted = true;
@@ -107,7 +108,7 @@ const WorkoutTrackerScreen = () => {
         const populatedExercise = (ex.exerciseId && typeof ex.exerciseId === 'object') ? ex.exerciseId : null;
 
         const rawVideoUrl = populatedExercise?.videoUrl || ex.videoUrl;
-        const resolvedVideoUrl = rawVideoUrl ? (getFileUrl(rawVideoUrl) || rawVideoUrl) : null;
+        const resolvedVideoUrl = getFileUrl(rawVideoUrl);
 
         return {
             ...ex,
@@ -174,7 +175,7 @@ const WorkoutTrackerScreen = () => {
     const currentProgress = calculateProgress();
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} edges={['left', 'right', 'bottom']}>
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
             {/* Header */}
@@ -201,7 +202,7 @@ const WorkoutTrackerScreen = () => {
                         </View>
 
                         {/* Exercise Video */}
-                        {exercise.videoUrl && (
+                        {Boolean(exercise.videoUrl) && (
                             <ExerciseVideo url={exercise.videoUrl} />
                         )}
 
@@ -232,7 +233,7 @@ const WorkoutTrackerScreen = () => {
                                     <Text style={[styles.setText, { fontWeight: 'bold', color: colors.text }, set.completed && [styles.completedText, { color: colors.success }]]}>{set.reps}</Text>
                                 </View>
                                 <View style={[styles.checkbox, { borderColor: colors.border }, set.completed && [styles.checkboxChecked, { backgroundColor: colors.success, borderColor: colors.success }]]}>
-                                    {set.completed && <Ionicons name="checkmark" size={16} color="white" />}
+                                    {Boolean(set.completed) && <Ionicons name="checkmark" size={16} color="white" />}
                                 </View>
                             </TouchableOpacity>
                         ))}

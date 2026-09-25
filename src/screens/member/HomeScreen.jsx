@@ -14,7 +14,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Notifications from 'expo-notifications';
 
 import { ScaleTouchable as TouchableOpacity, MotionView } from '../../components/common/Motion';
 import Avatar from '../../components/common/Avatar';
@@ -27,7 +26,9 @@ import { paymentAPI } from '../../api/payment.api';
 import { getUnreadCount } from '../../api/message.api';
 import { workoutAPI } from '../../api/workout.api';
 import { fetchUserProfile } from '../../store/slices/userSlice';
+import { fetchUnreadCount as fetchNotificationUnreadCount } from '../../store/slices/notificationSlice';
 import { formatDate } from '../../utils/helpers';
+import { addNotificationReceivedListener } from '../../services/pushNotifications';
 
 const { width } = Dimensions.get('window');
 
@@ -41,6 +42,7 @@ const HomeScreen = () => {
 
   // Get profile from Redux
   const { profile } = useSelector((state) => state.user);
+  const unreadNotifications = useSelector((state) => state.notification.unreadCount);
 
   const [selectedCategory, setSelectedCategory] = useState('beginner');
   const [activeMembership, setActiveMembership] = useState(null);
@@ -71,13 +73,20 @@ const HomeScreen = () => {
   const fetchUnreadMessages = useCallback(async () => {
     try {
       const response = await getUnreadCount();
-      if (response.success) {
-        setUnreadMessages(response.data.unreadCount || 0);
+      if (response?.success) {
+        setUnreadMessages(response?.data?.unreadCount ?? 0);
       }
     } catch (err) {
       console.log('Error fetching unread count:', err);
     }
   }, []);
+
+  const refreshUnreadCounts = useCallback(async () => {
+    await Promise.all([
+      fetchUnreadMessages(),
+      dispatch(fetchNotificationUnreadCount()),
+    ]);
+  }, [dispatch, fetchUnreadMessages]);
 
   const loadData = useCallback(async () => {
     try {
@@ -120,15 +129,14 @@ const HomeScreen = () => {
         });
       }
 
-      // Also fetch unread messages
-      await fetchUnreadMessages();
+      await refreshUnreadCounts();
     } catch (err) {
       setError('Unable to load latest data.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [dispatch, fetchUnreadMessages]);
+  }, [dispatch, refreshUnreadCounts]);
 
   useEffect(() => {
     loadData();
@@ -136,39 +144,47 @@ const HomeScreen = () => {
 
   // Listen for push notifications to update unread count
   useEffect(() => {
-    const subscription = Notifications.addNotificationReceivedListener((notification) => {
-      const data = notification.request.content.data;
-      if (data?.type === 'message') {
-        fetchUnreadMessages();
-      }
-    });
+    let subscription;
+    let cancelled = false;
 
-    return () => subscription.remove();
-  }, [fetchUnreadMessages]);
+    addNotificationReceivedListener(() => {
+        refreshUnreadCounts();
+      })
+      .then((nextSubscription) => {
+        if (cancelled) nextSubscription?.remove();
+        else subscription = nextSubscription;
+      })
+      .catch((error) => console.warn('Unable to listen for notifications:', error));
+
+    return () => {
+      cancelled = true;
+      subscription?.remove();
+    };
+  }, [refreshUnreadCounts]);
 
   // Handle app state changes
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        fetchUnreadMessages();
+        refreshUnreadCounts();
       }
       appState.current = nextAppState;
     });
 
     return () => subscription.remove();
-  }, [fetchUnreadMessages]);
+  }, [refreshUnreadCounts]);
 
   // Poll for unread messages and refresh when screen is focused
   useFocusEffect(
     useCallback(() => {
-      fetchUnreadMessages();
+      refreshUnreadCounts();
 
       const pollInterval = setInterval(() => {
-        fetchUnreadMessages();
+        refreshUnreadCounts();
       }, 10000); // Poll every 10 seconds
 
       return () => clearInterval(pollInterval);
-    }, [fetchUnreadMessages])
+    }, [refreshUnreadCounts])
   );
 
   const onRefresh = useCallback(() => {
@@ -394,9 +410,12 @@ const HomeScreen = () => {
               style={styles.actionGlassBtn}
               onPress={() => navigation.navigate('Messages')}
               accessibilityLabel="Messages"
+              accessibilityHint="Opens your conversations"
+              accessibilityRole="button"
+              hitSlop={8}
             >
               <Ionicons name="chatbubbles-outline" size={20} color="#FFFFFF" />
-              {unreadMessages > 0 && (
+              {Boolean(unreadMessages > 0) && (
                 <View style={[styles.messageBadge, { backgroundColor: colors.error }]}>
                   <Text style={styles.messageBadgeText}>
                     {unreadMessages > 99 ? '99+' : unreadMessages}
@@ -409,9 +428,14 @@ const HomeScreen = () => {
               style={styles.actionGlassBtn}
               onPress={() => navigation.navigate('Notifications')}
               accessibilityLabel="Notifications"
+              accessibilityHint="Opens your notifications"
+              accessibilityRole="button"
+              hitSlop={8}
             >
               <Ionicons name="notifications-outline" size={20} color="#FFFFFF" />
-              <View style={[styles.notificationDot, { backgroundColor: colors.error }]} />
+              {Boolean(unreadNotifications > 0) && (
+                <View style={[styles.notificationDot, { backgroundColor: colors.error }]} />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -757,15 +781,15 @@ const HomeScreen = () => {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.hScroll}
               >
-                {(workoutCategory === 'all' || workoutCategory === 'warmup') &&
+                {(Boolean(workoutCategory === 'all' || workoutCategory === 'warmup')) &&
                   (customWorkouts.warmup || []).map(renderPlanCard)}
-                {(workoutCategory === 'all' || workoutCategory === 'beginner') &&
+                {(Boolean(workoutCategory === 'all' || workoutCategory === 'beginner')) &&
                   (customWorkouts.beginner || []).map(renderPlanCard)}
-                {(workoutCategory === 'all' || workoutCategory === 'intermediate') &&
+                {(Boolean(workoutCategory === 'all' || workoutCategory === 'intermediate')) &&
                   (customWorkouts.intermediate || []).map(renderPlanCard)}
-                {(workoutCategory === 'all' || workoutCategory === 'advanced') &&
+                {(Boolean(workoutCategory === 'all' || workoutCategory === 'advanced')) &&
                   (customWorkouts.advanced || []).map(renderPlanCard)}
-                {(workoutCategory === 'all' || workoutCategory === 'warmdown') &&
+                {(Boolean(workoutCategory === 'all' || workoutCategory === 'warmdown')) &&
                   (customWorkouts.warmdown || []).map(renderPlanCard)}
               </ScrollView>
             ) : (

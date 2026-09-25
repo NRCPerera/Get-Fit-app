@@ -281,7 +281,7 @@ const ProfileScreen = () => {
           </View>
           <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{u.email || '—'}</Text>
         </View>
-        {u.phone && (
+        {Boolean(u.phone) && (
           <>
             <View style={[styles.divider, { backgroundColor: colors.border }]} />
             <View style={styles.infoRow}>

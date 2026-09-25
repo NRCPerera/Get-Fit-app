@@ -192,7 +192,7 @@ const EditProfileScreen = () => {
       </LinearGradient>
 
       <KeyboardAvoidingWrapper
-        style={screenStyles.container}
+        style={[screenStyles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={[screenStyles.scrollContent, { paddingTop: theme.spacing[4] }]}
         showsVerticalScrollIndicator={false}
       >

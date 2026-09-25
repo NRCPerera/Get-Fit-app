@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Modal, SafeAreaView, Platform, StatusBar, FlatList, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Modal, Platform, FlatList, KeyboardAvoidingView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -288,7 +289,7 @@ const EditScheduleScreen = () => {
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>
-              {(item.setReps || []).length > 1 && (
+              {Boolean((item.setReps || []).length > 1) && (
                 <TouchableOpacity
                   onPress={() => removeSetRep(index, srIndex)}
                   style={styles.removeSetRepButton}
@@ -339,7 +340,7 @@ const EditScheduleScreen = () => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <BackButton style={styles.backButton} color={colors.text} />
         <View style={styles.headerTitleContainer}>
@@ -392,7 +393,7 @@ const EditScheduleScreen = () => {
                 <Text style={[styles.dateButtonText, !startDate && styles.dateButtonPlaceholder, { color: startDate ? colors.text : colors.textSecondary }]}>
                   {startDate || 'Select start date'}
                 </Text>
-                {startDate && (
+                {Boolean(startDate) && (
                   <TouchableOpacity
                     onPress={(e) => {
                       e.stopPropagation();
@@ -415,7 +416,7 @@ const EditScheduleScreen = () => {
                 <Text style={[styles.dateButtonText, !endDate && styles.dateButtonPlaceholder, { color: endDate ? colors.text : colors.textSecondary }]}>
                   {endDate || 'Select end date'}
                 </Text>
-                {endDate && (
+                {Boolean(endDate) && (
                   <TouchableOpacity
                     onPress={(e) => {
                       e.stopPropagation();
@@ -454,7 +455,7 @@ const EditScheduleScreen = () => {
               <Text style={[styles.addButtonText, { color: colors.white }]}>Add Exercise</Text>
             </TouchableOpacity>
           </View>
-          {scheduleType !== '1-day' && (
+          {Boolean(scheduleType !== '1-day') && (
             <View style={styles.dayTabs}>
               {Array.from({ length: scheduleType === '2-day' ? 2 : 3 }, (_, i) => i + 1).map(day => (
                 <TouchableOpacity
@@ -632,7 +633,7 @@ const EditScheduleScreen = () => {
                   autoCorrect={false}
                   placeholderTextColor={colors.textSecondary}
                 />
-                {searchQuery.length > 0 && (
+                {Boolean(searchQuery.length > 0) && (
                   <TouchableOpacity onPress={() => setSearchQuery('')}>
                     <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
                   </TouchableOpacity>

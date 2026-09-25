@@ -69,10 +69,10 @@ const AppNavigator = () => {
         <Stack.Screen name="Auth" component={AuthNavigator} />
       ) : (
         <>
-          {role === 'member' && (
+          {Boolean(role === 'member') && (
             <Stack.Screen name="Member" component={MemberNavigator} />
           )}
-          {role === 'instructor' && (
+          {Boolean(role === 'instructor') && (
             <Stack.Screen name="Instructor" component={InstructorNavigator} />
           )}
         </>

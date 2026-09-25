@@ -54,7 +54,7 @@ export default function Input({
 
   return (
     <View style={[styles.container, style]}>
-      {label && (
+      {Boolean(label) && (
         <Text style={[styles.label, { color: colors.text }]}>
           {label}
         </Text>
@@ -81,7 +81,7 @@ export default function Input({
           },
         ]}
       >
-        {leftIcon && (
+        {Boolean(leftIcon) && (
           <View style={styles.iconLeft}>
             {typeof leftIcon === 'string' ? (
               <Ionicons
@@ -117,7 +117,7 @@ export default function Input({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
         />
-        {isPassword && (
+        {Boolean(isPassword) && (
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel={isPasswordVisible ? 'Hide password' : 'Show password'}
@@ -133,7 +133,7 @@ export default function Input({
             />
           </TouchableOpacity>
         )}
-        {rightIcon && !isPassword && (
+        {Boolean(rightIcon && !isPassword) && (
           <View style={styles.iconRight}>
             {typeof rightIcon === 'string' ? (
               <Ionicons
@@ -147,12 +147,12 @@ export default function Input({
           </View>
         )}
       </View>
-      {error && (
+      {Boolean(error) && (
         <Text style={[styles.error, { color: colors.error }]}>
           {error}
         </Text>
       )}
-      {helperText && !error && (
+      {Boolean(helperText && !error) && (
         <Text style={[styles.helperText, { color: colors.textSecondary }]}>
           {helperText}
         </Text>

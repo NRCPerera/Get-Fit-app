@@ -305,14 +305,14 @@ const InstructorDetailScreen = () => {
           <BackButton style={styles.backButton} color={colors.text} />
         </View>
 
-        {error && (
+        {Boolean(error) && (
           <Card variant="outlined" style={styles.errorCard}>
             <Ionicons name="alert-circle" size={20} color={colors.error} />
             <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
           </Card>
         )}
 
-        {instructor && (
+        {Boolean(instructor) && (
           <Card variant="elevated" style={styles.profileCard}>
             {/* Profile Header */}
             <View style={styles.profileHeader}>
@@ -328,7 +328,7 @@ const InstructorDetailScreen = () => {
                     <Text style={[styles.avatarText, { color: colors.primary }]}>{initials}</Text>
                   </View>
                 )}
-                {isAvailable && (
+                {Boolean(isAvailable) && (
                   <View style={[styles.availableBadge, { backgroundColor: colors.background, borderColor: colors.background }]}>
                     <View style={[styles.availableDot, { backgroundColor: colors.success }]} />
                   </View>
@@ -338,10 +338,10 @@ const InstructorDetailScreen = () => {
                 <View style={styles.nameRow}>
                   <Text style={[styles.name, { color: colors.text }]}>{instructorName}</Text>
                 </View>
-                {instructorEmail && (
+                {Boolean(instructorEmail) && (
                   <Text style={[styles.email, { color: colors.textSecondary }]}>{instructorEmail}</Text>
                 )}
-                {instructor.specialty && (
+                {Boolean(instructor.specialty) && (
                   <View style={styles.specialtyRow}>
                     <Ionicons name="fitness-outline" size={14} color={colors.primary} />
                     <Text style={[styles.specialty, { color: colors.primary }]}>{instructor.specialty}</Text>
@@ -350,7 +350,7 @@ const InstructorDetailScreen = () => {
               </View>
             </View>
 
-            {instructor.bio && (
+            {Boolean(instructor.bio) && (
               <Text style={[styles.bio, { color: colors.textSecondary }]}>{instructor.bio}</Text>
             )}
 
@@ -417,7 +417,7 @@ const InstructorDetailScreen = () => {
             </View>
 
             {/* Subscription Section (Paid Personal Training) */}
-            {instructor.monthlyRate > 0 && (
+            {Boolean(instructor.monthlyRate > 0) && (
               <View style={styles.sectionContainer}>
                 <View style={styles.sectionHeader}>
                   <Ionicons name="star-outline" size={18} color={colors.warning} />
@@ -468,7 +468,7 @@ const InstructorDetailScreen = () => {
                     />
 
                     {/* Message Button - Only visible when subscribed */}
-                    {isSubscribed && !checkingSubscription && (
+                    {Boolean(isSubscribed && !checkingSubscription) && (
                       <Button
                         title="Message"
                         onPress={handleMessage}
@@ -485,7 +485,7 @@ const InstructorDetailScreen = () => {
 
             {/* Details Grid */}
             <View style={[styles.detailsGrid, { borderTopColor: colors.border }]}>
-              {instructor.specialty && (
+              {Boolean(instructor.specialty) && (
                 <View style={styles.detailItem}>
                   <View style={[styles.detailIcon, { backgroundColor: colors.primary + '15' }]}>
                     <Ionicons name="fitness-outline" size={20} color={colors.primary} />
@@ -496,7 +496,7 @@ const InstructorDetailScreen = () => {
                   </View>
                 </View>
               )}
-              {instructor.experience !== undefined && instructor.experience !== null && (
+              {Boolean(instructor.experience !== undefined && instructor.experience !== null) && (
                 <View style={styles.detailItem}>
                   <View style={[styles.detailIcon, { backgroundColor: colors.warning + '15' }]}>
                     <Ionicons name="trophy-outline" size={20} color={colors.warning} />
@@ -507,7 +507,7 @@ const InstructorDetailScreen = () => {
                   </View>
                 </View>
               )}
-              {instructor.certifications && instructor.certifications.length > 0 && (
+              {Boolean(instructor.certifications && instructor.certifications.length > 0) && (
                 <View style={styles.detailItem}>
                   <View style={[styles.detailIcon, { backgroundColor: colors.secondary + '15' }]}>
                     <Ionicons name="ribbon-outline" size={20} color={colors.secondary} />
@@ -518,7 +518,7 @@ const InstructorDetailScreen = () => {
                   </View>
                 </View>
               )}
-              {instructor.monthlyRate !== undefined && instructor.monthlyRate > 0 && (
+              {Boolean(instructor.monthlyRate !== undefined && instructor.monthlyRate > 0) && (
                 <View style={styles.detailItem}>
                   <View style={[styles.detailIcon, { backgroundColor: colors.success + '15' }]}>
                     <Ionicons name="cash-outline" size={20} color={colors.success} />
@@ -534,7 +534,7 @@ const InstructorDetailScreen = () => {
         )}
 
         {/* Before/After Transformation Photos */}
-        {(beforePhotoUrl || afterPhotoUrl) && (
+        {(Boolean(beforePhotoUrl || afterPhotoUrl)) && (
           <Card variant="elevated" style={styles.transformationCard}>
             <View style={styles.transformationHeader}>
               <Ionicons name="images-outline" size={24} color={colors.primary} />
@@ -545,7 +545,7 @@ const InstructorDetailScreen = () => {
             </Text>
 
             <View style={styles.transformationPhotosContainer}>
-              {beforePhotoUrl && (
+              {Boolean(beforePhotoUrl) && (
                 <View style={styles.transformationPhotoWrapper}>
                   <Text style={[styles.transformationPhotoLabel, { color: colors.text }]}>Before</Text>
                   <Image
@@ -555,7 +555,7 @@ const InstructorDetailScreen = () => {
                   />
                 </View>
               )}
-              {afterPhotoUrl && (
+              {Boolean(afterPhotoUrl) && (
                 <View style={styles.transformationPhotoWrapper}>
                   <Text style={[styles.transformationPhotoLabel, { color: colors.text }]}>After</Text>
                   <Image

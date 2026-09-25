@@ -88,7 +88,7 @@ const MySchedulesScreen = () => {
           </View>
           <View style={styles.cardTitleContainer}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>{item.name || 'Training Schedule'}</Text>
-            {item.difficulty && (
+            {Boolean(item.difficulty) && (
               <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(item.difficulty) + '20' }]}>
                 <Text style={[styles.difficultyText, { color: getDifficultyColor(item.difficulty) }]}>
                   {item.difficulty.charAt(0).toUpperCase() + item.difficulty.slice(1)}
@@ -100,12 +100,12 @@ const MySchedulesScreen = () => {
         <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
       </View>
 
-      {item.description && (
+      {Boolean(item.description) && (
         <Text style={[styles.cardDescription, { color: colors.textSecondary }]} numberOfLines={2}>{item.description}</Text>
       )}
 
       <View style={[styles.cardDetails, { borderTopColor: colors.border }]}>
-        {item.startDate && (
+        {Boolean(item.startDate) && (
           <View style={styles.cardDetailItem}>
             <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
             <Text style={[styles.cardDetailText, { color: colors.textSecondary }]}>
@@ -115,7 +115,7 @@ const MySchedulesScreen = () => {
             </Text>
           </View>
         )}
-        {item.exercises && item.exercises.length > 0 && (
+        {Boolean(item.exercises && item.exercises.length > 0) && (
           <View style={styles.cardDetailItem}>
             <Ionicons name="barbell-outline" size={16} color={colors.textSecondary} />
             <Text style={[styles.cardDetailText, { color: colors.textSecondary }]}>

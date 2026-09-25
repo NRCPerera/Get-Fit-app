@@ -61,7 +61,7 @@ export default function Card({
         style,
       ]}
     >
-      {variant === 'elevated' && (
+      {Boolean(variant === 'elevated') && (
         <MotionView pulse pointerEvents="none" style={[StyleSheet.absoluteFillObject, {
           borderRadius: StyleSheet.flatten(style)?.borderRadius ?? theme.borderRadius.xl,
           borderWidth: 1, borderColor: colors.glow + '25',

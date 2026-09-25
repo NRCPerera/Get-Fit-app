@@ -33,6 +33,7 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ['persist/PERSIST'],
+        warnAfter: 64,
       },
     }),
 });
